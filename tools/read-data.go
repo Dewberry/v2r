@@ -1,5 +1,7 @@
 package tools
 
+import "github.com/jmoiron/sqlx"
+
 func ReadData(filepath string) error {
 
 	data, err := ReadIn(2, filepath) // 2 dimensions hardcoded
@@ -14,4 +16,8 @@ func ReadData(filepath string) error {
 		}
 	}
 	return nil
+}
+
+func ReadPGData(db *sqlx.DB, query string) (string, error) {
+	return "", nil
 }
