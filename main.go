@@ -1,22 +1,16 @@
 package main
 
 import (
-	"app/handlers"
+	"app/tools"
 	"fmt"
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	"log"
 )
 
 func main() {
-	fmt.Println("Welcome to the fcast-dashboard API")
-	// Instantiate echo
-	e := echo.New()
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-
-	e.GET("/ping", handlers.Ping())
-	e.GET("/read-data", handlers.ReadData())
-
-	e.Logger.Fatal(e.Start(":5000"))
+	fmt.Println("R2V Dev")
+	inputFile := "/app/data/example.txt"
+	err := tools.ReadData(inputFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
