@@ -5,6 +5,27 @@ services:
     container_name: v2r
     build:
       context: .
+    networks:
+      - v2r-net
     volumes:
       - ./:/app
     entrypoint: CompileDaemon --build="go build main.go" --command="./main"
+
+  postgres:
+    image: kartoza/postgis:14-3.2
+    container_name: v2r-db
+    networks:
+      - v2r-net
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./pg-data:/var/lib/postgresql
+    environment:
+      - ALLOW_IP_RANGE=0.0.0.0/0
+      - POSTGRES_USER=docker
+      - POSTGRES_PASS=docker
+    restart: on-failure
+
+networks:
+  v2r-net:
+    driver: bridge
