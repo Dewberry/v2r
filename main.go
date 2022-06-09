@@ -8,7 +8,7 @@ import (
 
 func main() {
 	// From txt file
-	// inputFile := "/app/data/small/nb4-negweight.txt"
+	// inputFile := "/app/data/small/nb2.txt"
 	// err := tools.ReadData(inputFile)
 	// if err != nil {
 	// 	log.Fatal(err)

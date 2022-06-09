@@ -10,29 +10,23 @@ import (
 
 func ReadData(filepath string) error {
 
-	pointsList, err := ReadIn(2, filepath) // 2 dimensions hardcoded
+	pointsList, err := ReadIn(filepath)
 	if err != nil {
 		return err
 	}
+	data := MakeCoordSpace(pointsList)
 
-	data := MakeCoordSpace(pointsList, 0, 0, 1, 1)
-
-	channel := make(chan string, 5)
+	channel := make(chan string, 6)
 	i := 0
 	for pow := 1.0; pow < 3.5; pow += .5 {
 
-		// co := calculateIDW(data, Coord{Point{5, 7, 0}, OrderedPair{5, 7}}, pow)
-		// fmt.Println(co)
-		// co1 := calculateIDW(data, Coord{Point{10, 7, 0}, OrderedPair{10, 7}}, pow)
-		// fmt.Println(co1)
-		// co2 := calculateIDW(data, Coord{Point{6, 12, 0}, OrderedPair{6, 12}}, pow)
-		// fmt.Println(co2)
 		i++
-		err = MainSolve(data, filepath, pow, true, channel, 1, 1)
+		err = MainSolve(data, filepath, pow, true, channel)
 		if err != nil {
 			return err
 		}
 	}
+
 	for x := 0; x < i; x++ {
 		received_string := <-channel
 		fmt.Println(received_string)
@@ -70,24 +64,21 @@ func ReadPGData(db *sqlx.DB, query string) (string, error) {
 		db_items = append(db_items, Point{st_x, st_y, elev})
 	}
 
-	fmt.Println("x:", min_x, max_x, "y:", min_y, max_y)
-	fmt.Println("x,", max_x-min_x, "\ty:", max_y-min_y)
+	xStep := 1000.0
+	yStep := 1000.0
 
-	xStep := 10000.0
-	yStep := 10000.0
+	SetMinMax(min_x, max_x, xStep, min_y, max_y, yStep)
+	data := MakeCoordSpace(db_items)
 
-	SetMinMax(min_x, max_x, min_y, max_y, xStep, yStep)
-	data := MakeCoordSpace(db_items, min_x, min_y, xStep, yStep)
-
-	// step := .5
+	step := .5
 	iterations := 1
-	// pow := 1.0
+	pow := 1.7
 
 	channel := make(chan string, iterations)
-	go MainSolve(data, "data/sample", 3.0, true, channel, xStep, yStep)
-	// for x := 0; x < iterations; x++ {
-	// 	go MainSolve(data, "data/sample", pow+float64(x)*step, true, channel, xStep, yStep)
-	// }
+	// go MainSolve(data, "data/sample", 3.0, true, channel)
+	for x := 0; x < iterations; x++ {
+		go MainSolve(data, "data/sample", pow+float64(x)*step, true, channel)
+	}
 
 	for x := 0; x < iterations; x++ {
 		received_string := <-channel

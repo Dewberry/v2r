@@ -27,10 +27,11 @@ type Coord struct {
 	Pair OrderedPair
 }
 
-// func PointToPair(p Point) OrderedPair {
-// 	newX := p.X -
-// 	return OrderedPair{}
-// }
+func PointToPair(p Point) OrderedPair {
+	newX := int((p.X - X_MIN_MAX_STEP[0]) / X_MIN_MAX_STEP[2])
+	newY := int((p.Y - Y_MIN_MAX_STEP[0]) / Y_MIN_MAX_STEP[2])
+	return OrderedPair{newX, newY}
+}
 
 func euclid_dist(p1, p2 Point) float64 {
 	total := math.Pow(p1.X-p2.X, 2) + math.Pow(p1.Y-p2.Y, 2)
@@ -50,18 +51,9 @@ func DistExp(p0, p Point, exp float64) float64 {
 	return math.Pow(euclid_dist(p, p0), -exp)
 }
 
-func SetMinMax(min_x, max_x, min_y, max_y, xStep, yStep float64) {
-	xSpace := int((max_x - min_x) / xStep)
-	ySpace := int((max_y - min_y) / yStep)
-
-	setMinMaxHelper(0, xSpace, 0, ySpace)
-}
-
-func setMinMaxHelper(min_x, max_x, min_y, max_y int) {
-	MIN[0] = min_x
-	MAX[0] = max_x
-	MAX[1] = max_y
-	MIN[1] = min_y
+func SetMinMax(min_x, max_x, step_x, min_y, max_y, step_y float64) {
+	X_MIN_MAX_STEP = [3]float64{min_x, max_x, step_x}
+	Y_MIN_MAX_STEP = [3]float64{min_y, max_y, step_y}
 }
 
 // TODO: implement boundaries
@@ -74,22 +66,18 @@ func CalculateWeight(cell Point, data []Point, exp float64) float64 {
 	return math.Pow(total, .5)
 }
 
-func createCoordPoint(db_elem Point, min_x float64, min_y float64, xStep float64, yStep float64, ch chan Coord) {
-	new_x := int((db_elem.X - min_x) / xStep)
-	new_y := int((db_elem.Y - min_y) / yStep)
-
-	co := Coord{Point{db_elem.X, db_elem.Y, db_elem.Weight}, OrderedPair{new_x, new_y}}
-	fmt.Println(co, xStep, yStep)
-	ch <- Coord{Point{db_elem.X, db_elem.Y, db_elem.Weight}, OrderedPair{new_x, new_y}}
+func createCoordPoint(db_elem Point, ch chan Coord) {
+	pair := PointToPair(db_elem)
+	ch <- Coord{Point{db_elem.X, db_elem.Y, db_elem.Weight}, pair}
 }
 
 //TODO: FIX THIS
-func MakeCoordSpace(db_items []Point, min_x float64, min_y float64, xStep float64, yStep float64) map[OrderedPair]Point {
+func MakeCoordSpace(db_items []Point) map[OrderedPair]Point {
 	seen := map[OrderedPair]Point{}
 
 	channel := make(chan Coord, len(db_items))
 	for _, db_elem := range db_items {
-		go createCoordPoint(db_elem, min_x, min_y, xStep, yStep, channel)
+		go createCoordPoint(db_elem, channel)
 	}
 
 	for i := 0; i < len(db_items); i++ {
@@ -108,7 +96,7 @@ func MakeCoordSpace(db_items []Point, min_x float64, min_y float64, xStep float6
 	return seen
 }
 
-func ReadIn(dim int, f string) ([]Point, error) {
+func ReadIn(f string) ([]Point, error) {
 	file, err := os.Open(f)
 	if err != nil {
 		return []Point{}, err
@@ -121,29 +109,45 @@ func ReadIn(dim int, f string) ([]Point, error) {
 	var data []Point
 	// var bounds []Point // to be implemented later
 
+	xStep, yStep := 1.0, 1.0
 	for sc.Scan() {
 		switch strings.Fields(sc.Text())[0] {
 		case "POINTS":
 			data = addPoints(sc)
 
+		case "STEP":
+			sc.Scan()
+			fields := strings.Fields(sc.Text())
+			xStep, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
+			if err != nil {
+				return []Point{}, err
+			}
+			yStep, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
+			if err != nil {
+				return []Point{}, err
+			}
+
 		case "ESTIMATE":
-			for d := 0; d < dim; d++ {
+			for d := 0; d < 2; d++ {
 				sc.Scan()
 				for i, val := range strings.Fields(sc.Text()) {
-					val, innerErr := strconv.Atoi(val)
+					val, innerErr := strconv.ParseFloat(val, 64)
 					if innerErr != nil {
 						return data, innerErr
 					}
 
-					if i == 0 {
-						MIN[d] = val
+					if d == 0 {
+						X_MIN_MAX_STEP[i] = val
 					} else {
-						MAX[d] = val
+						Y_MIN_MAX_STEP[i] = val
 					}
 
 				}
 
 			}
+			X_MIN_MAX_STEP[2] = xStep
+			Y_MIN_MAX_STEP[2] = yStep
+			fmt.Println("reading in", "X:", X_MIN_MAX_STEP, "\ty:", Y_MIN_MAX_STEP)
 			return data, nil
 
 		}
@@ -167,6 +171,8 @@ func addPoints(sc *bufio.Scanner) []Point {
 		p.X, _ = strconv.ParseFloat(fields[0], 64)
 		p.Y, _ = strconv.ParseFloat(fields[1], 64)
 		p.Weight, _ = strconv.ParseFloat(fields[2], 64)
+
+		fmt.Println(p)
 
 		data = append(data, p)
 
@@ -199,7 +205,10 @@ func GetExcelColumn(i int) string {
 	return strings.TrimRight(endcol, "1")
 
 }
-func PrintExcel(data [][]float64, filename string, sheetname string) error {
+func PrintExcel(data [][]float64, filepath string, pow float64) error {
+	filename := fmt.Sprintf("%s-output.xlsx", strings.TrimSuffix(filepath, ".txt"))
+	sheetname := fmt.Sprintf("pow%v", pow)
+
 	grid := Transpose(data)
 
 	file, err := excelize.OpenFile(filename)
@@ -216,7 +225,7 @@ func PrintExcel(data [][]float64, filename string, sheetname string) error {
 
 	for i, row := range grid {
 		// go printRowHelper(file, sheetname, fmt.Sprintf("A%v", i+1), fmt.Sprintf("B%v", len(grid)-i), i+1, MAX[1]-i, row, 25)
-		file.SetCellValue(sheetname, fmt.Sprintf("A%v", i+1), MAX[1]-i) // y-axis
+		file.SetCellValue(sheetname, fmt.Sprintf("A%v", i+1), len(grid)-i-1) // y-axis
 		file.SetSheetRow(sheetname, fmt.Sprintf("B%v", len(grid)-i), &row)
 		file.SetRowHeight(sheetname, i+1, 25)
 
@@ -224,7 +233,7 @@ func PrintExcel(data [][]float64, filename string, sheetname string) error {
 	file.SetRowHeight(sheetname, endrow+1, 25)
 
 	for i := 0; i < len(grid[0]); i++ {
-		file.SetCellValue(sheetname, fmt.Sprintf("%s%v", GetExcelColumn(i+1), len(grid)+1), i+MIN[0]) // x-axis
+		file.SetCellValue(sheetname, fmt.Sprintf("%s%v", GetExcelColumn(i+1), len(grid)+1), i) // x-axis
 	}
 	file.SetColWidth(sheetname, "A", endcol, 5)
 
@@ -252,5 +261,40 @@ func PrintExcel(data [][]float64, filename string, sheetname string) error {
 
 	file.SaveAs(filename)
 
+	return nil
+}
+
+func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64) error {
+	filename := fmt.Sprintf("%s-output.asc", strings.TrimSuffix(filepath, ".txt"))
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+
+	writer := bufio.NewWriter(f)
+	header := []string{
+		fmt.Sprintf("ncols\t%v", len(grid[0])),
+		fmt.Sprintf("\nnrows\t%v", len(grid)-1),
+		fmt.Sprintf("\nyllcorner\t%v", Y_MIN_MAX_STEP[0]),
+		fmt.Sprintf("\nxllcorner\t%v", X_MIN_MAX_STEP[0]),
+		fmt.Sprintf("\ncellsize\t%v", cellsize),
+		"\nNODATA_value\t-9999",
+	}
+
+	for _, line := range header {
+		_, err := writer.WriteString(line)
+		if err != nil {
+			log.Fatalf("Got error while writing to a file. Err: %s", err.Error())
+		}
+	}
+
+	for r := 0; r < len(grid); r++ {
+		outstring := "\n"
+		for c := 0; c < len(grid[0]); c++ {
+			outstring += fmt.Sprintf("%.2f ", grid[r][c])
+		}
+		writer.WriteString(outstring)
+	}
 	return nil
 }

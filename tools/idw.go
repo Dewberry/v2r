@@ -2,37 +2,64 @@ package tools
 
 import (
 	"fmt"
-	"strings"
 	"time"
 )
 
-var MIN = make([]int, 2)
-var MAX = make([]int, 2)
+var X_MIN_MAX_STEP [3]float64 = [3]float64{0, 0, 1}
+var Y_MIN_MAX_STEP [3]float64 = [3]float64{0, 0, 1}
 
-func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, channel chan string, xStep float64, yStep float64) error {
+type ChunkStruct struct {
+	pair OrderedPair
+	data [][]float64
+}
 
+func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, channel chan string) error {
 	start := time.Now()
-	var grid = make([][]float64, MAX[0]-MIN[0]+1)
-	for i := range grid {
-		grid[i] = make([]float64, MAX[1]-MIN[1]+1)
-	}
-	fmt.Println("MAX", MAX, "MIN", MIN)
 
+	xScale := int((1 + X_MIN_MAX_STEP[1] - X_MIN_MAX_STEP[0]) / X_MIN_MAX_STEP[2])
+	yScale := int((1 + Y_MIN_MAX_STEP[1] - Y_MIN_MAX_STEP[0]) / Y_MIN_MAX_STEP[2])
+	var grid = make([][]float64, xScale)
+	for i := range grid {
+		grid[i] = make([]float64, yScale)
+	}
+	fmt.Println("MIN VALUE | MAX VALUE | STEP")
+	fmt.Println("X", X_MIN_MAX_STEP)
+	fmt.Println("Y: ", Y_MIN_MAX_STEP)
+
+	// chunkx := 30
+	// chunky := 30
+	// totalChunks := 0
+	// chunkChannel := make(chan ChunkStruct, 20)
+	// for x := 0; x < len(grid); x+=chunkx {
+	// 	for y := 0; y < len(grid[0]); y+=chunky {
+	// 		totalChunks++
+	// 		chunkSolve(data, pow, chunkChannel, OrderedPair{x, y}, OrderedPair{math.MinInt(x+chunkx, len(grid)), math.MinInt(y+chunky, len(grid[0]))})
+	// 	}
+	// }
+
+	// for i := 0; i < totalChunks; i++ {
+	// 	inChunk := <- chunkChannel
+
+	// 	for r:= 0; r <
+	// }
 	for x := 0; x < len(grid); x++ {
 		for y := 0; y < len(grid[0]); y++ {
-			fmt.Println("coord", Coord{Point{float64(MIN[0]) + float64(x)*xStep, float64(MIN[1]) + float64(y)*yStep, 0}, OrderedPair{x + MIN[0], y + MIN[1]}})
-			co := calculateIDW(data, Coord{Point{float64(MIN[0]) + float64(x)*xStep, float64(MIN[1]) + float64(y)*yStep, 0}, OrderedPair{x + MIN[0], y + MIN[1]}}, pow)
-			// fmt.Println(co)
-			grid[x][y] = co.P.Weight
+			px := X_MIN_MAX_STEP[0] + float64(x)*X_MIN_MAX_STEP[2]
+			py := Y_MIN_MAX_STEP[0] + float64(y)*Y_MIN_MAX_STEP[2]
+			point := Point{px, py, 0}
+			// pair := PointToPair(point)
+
+			co := calculateIDW(data, point, pow)
+			grid[x][y] = co.Weight
 		}
 	}
-	filename := fmt.Sprintf("%s-output.xlsx", strings.TrimSuffix(filepath, ".txt"))
-	sheetname := fmt.Sprintf("pow%v", pow)
+	fmt.Printf("idw finished: %v\n", time.Since(start))
 
 	start_print := time.Now()
 
 	if print_out {
-		innerErr := PrintExcel(grid, filename, sheetname)
+		// innerErr := PrintExcel(grid, filepath, pow)
+		innerErr := PrintAscii(grid, filepath, pow, 100.0)
 
 		if innerErr != nil {
 			return innerErr
@@ -43,33 +70,42 @@ func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_o
 
 }
 
-// // currently assumes dimension n = 2
-// func makeGrid(grid_min_max [][]float64) [][]float64{
+func chunkSolve(locs map[OrderedPair]Point, pow float64, channel chan ChunkStruct, start OrderedPair, end OrderedPair) {
+	var grid [][]float64
+	for r := start.X; r < end.X; r++ {
+		var row []float64
+		for c := start.Y; c < end.Y; c++ {
+			px := X_MIN_MAX_STEP[0] + float64(r)*X_MIN_MAX_STEP[2]
+			py := Y_MIN_MAX_STEP[0] + float64(c)*Y_MIN_MAX_STEP[2]
+			point := Point{px, py, 0}
+			row = append(row, calculateIDW(locs, point, pow).Weight)
+		}
+		grid = append(grid, row)
 
-// }
+	}
+	channel <- ChunkStruct{start, grid}
 
-func calculateIDW(locs map[OrderedPair]Point, p0 Coord, exp float64) Coord {
+}
+
+func calculateIDW(locs map[OrderedPair]Point, p0 Point, exp float64) Point {
 	denom := 0.0
 
-	point, exists := locs[p0.Pair]
+	p_given, exists := locs[PointToPair(p0)]
 	if exists {
-		return Coord{point, p0.Pair}
+		return p_given
 	}
 
-	//(x, y) : (actualx, actualy, weight)
-	// fmt.Println(p0)
 	for _, val_point := range getInBounds(p0, locs) { // refactor into a map rather than a slice
-		denom_helper := DistExp(p0.P, val_point, exp)
-		// fmt.Println(denom_helper, val_point)
+		denom_helper := DistExp(p0, val_point, exp)
 
-		p0.P.Weight += val_point.Weight * denom_helper
+		p0.Weight += val_point.Weight * denom_helper
 		denom += denom_helper
 
 	}
-	p0.P.Weight /= denom
+	p0.Weight /= denom
 	return p0
 }
 
-func getInBounds(p Coord, data map[OrderedPair]Point) map[OrderedPair]Point {
+func getInBounds(p Point, data map[OrderedPair]Point) map[OrderedPair]Point {
 	return data
 }
