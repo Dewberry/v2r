@@ -7,6 +7,12 @@ import (
 )
 
 func main() {
+	// From txt file
+	// inputFile := "/app/data/small/nb4-negweight.txt"
+	// err := tools.ReadData(inputFile)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 
 	db := tools.DBInit()
 
@@ -15,16 +21,11 @@ func main() {
 		fmt.Println("Connected to database?", err)
 	}
 
-	// inputFile := "/app/data/example.txt"
-	// err = tools.ReadData(inputFile)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-
 	inputQuery := ""
 	result, err := tools.ReadPGData(db, inputQuery)
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println(result)
+
 }
