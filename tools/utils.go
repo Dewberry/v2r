@@ -33,6 +33,30 @@ func PointToPair(p Point) OrderedPair {
 	return OrderedPair{newX, newY}
 }
 
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func RCToPoint(r, c int) Point {
+	px := X_MIN_MAX_STEP[0] + float64(c)*X_MIN_MAX_STEP[2]
+	py := Y_MIN_MAX_STEP[0] + float64(r)*Y_MIN_MAX_STEP[2]
+	return (Point{px, py, 0})
+}
+func PairToPoint(pair OrderedPair) Point {
+	return RCToPoint(pair.Y, pair.X)
+}
+
+func RCToPair(r, c int) OrderedPair {
+	return OrderedPair{c, r}
+}
+
+func PairToRC(pair OrderedPair) (int, int) {
+	return pair.Y, pair.X
+}
+
 func euclid_dist(p1, p2 Point) float64 {
 	total := math.Pow(p1.X-p2.X, 2) + math.Pow(p1.Y-p2.Y, 2)
 	return math.Pow(total, .5)
@@ -66,7 +90,6 @@ func createCoordPoint(db_elem Point, ch chan Coord) {
 	ch <- Coord{Point{db_elem.X, db_elem.Y, db_elem.Weight}, pair}
 }
 
-//TODO: FIX THIS
 func MakeCoordSpace(db_items []Point) map[OrderedPair]Point {
 	seen := map[OrderedPair]Point{}
 

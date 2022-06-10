@@ -11,8 +11,9 @@ var Y_MIN_MAX_STEP [3]float64 = [3]float64{0, 0, 1}
 var CELL float64 = 1.0
 
 type ChunkStruct struct {
-	pair OrderedPair
-	data [][]float64
+	Pair  OrderedPair
+	Data  [][]float64
+	Empty bool
 }
 
 func ConfigureGlobals(min_x, max_x, xStep, min_y, max_y, yStep float64) {
@@ -29,7 +30,50 @@ func SetStep(val float64) {
 	CELL = val
 }
 
-func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, outfile string, channel chan string) error {
+func ChunkSolve(grid [][]float64, data map[OrderedPair]Point, pow float64) {
+	chunkr := 30
+	chunkc := 30
+	totalChunks := 0
+	chunkChannel := make(chan ChunkStruct, 10)
+	for r := 0; r < len(grid); r += chunkr {
+		for c := 0; c < len(grid[0]); c += chunkc {
+			totalChunks++
+			go chunkSolveHelper(data, pow, RCToPair(r, c), RCToPair(Min(r+chunkr, len(grid)), Min(c+chunkc, len(grid[0]))), chunkChannel)
+		}
+	}
+
+	for i := 0; i < totalChunks; i++ {
+		gridChunk := <-chunkChannel
+		r0, c0 := PairToRC(gridChunk.Pair)
+
+		for r := 0; r < len(gridChunk.Data); r++ {
+			for c := 0; c < len(gridChunk.Data[0]); c++ {
+				grid[r0+r][c0+c] = gridChunk.Data[r][c]
+			}
+		}
+	}
+}
+
+func chunkSolveHelper(locs map[OrderedPair]Point, pow float64, start OrderedPair, end OrderedPair, channel chan ChunkStruct) {
+	var grid [][]float64
+
+	empty := true
+	rStart, cStart := PairToRC(start)
+	rEnd, cEnd := PairToRC(end)
+	for r := rStart; r < rEnd; r++ {
+		var row []float64
+		for c := cStart; c < cEnd; c++ {
+			row = append(row, calculateIDW(locs, r, c, pow).Weight)
+			empty = false
+		}
+		grid = append(grid, row)
+
+	}
+	channel <- ChunkStruct{start, grid, empty}
+
+}
+
+func MainSolve(data map[OrderedPair]Point, filepath string, outfile string, pow float64, print_out bool, useChunk bool, channel chan string) error {
 	start := time.Now()
 
 	xScale := int((1 + X_MIN_MAX_STEP[1] - X_MIN_MAX_STEP[0]) / X_MIN_MAX_STEP[2])
@@ -42,31 +86,16 @@ func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_o
 	fmt.Println("X", X_MIN_MAX_STEP)
 	fmt.Println("Y: ", Y_MIN_MAX_STEP)
 
-	// chunkx := 30
-	// chunky := 30
-	// totalChunks := 0
-	// chunkChannel := make(chan ChunkStruct, 20)
-	// for x := 0; x < len(grid); x+=chunkx {
-	// 	for y := 0; y < len(grid[0]); y+=chunky {
-	// 		totalChunks++
-	// 		chunkSolve(data, pow, chunkChannel, OrderedPair{x, y}, OrderedPair{math.MinInt(x+chunkx, len(grid)), math.MinInt(y+chunky, len(grid[0]))})
-	// 	}
-	// }
-
-	// for i := 0; i < totalChunks; i++ {
-	// 	inChunk := <- chunkChannel
-
-	// 	for r:= 0; r <
-	// }
-	for r := 0; r < len(grid); r++ {
-		for c := 0; c < len(grid[0]); c++ {
-			px := X_MIN_MAX_STEP[0] + float64(c)*X_MIN_MAX_STEP[2]
-			py := Y_MIN_MAX_STEP[0] + float64(r)*Y_MIN_MAX_STEP[2]
-			point := Point{px, py, 0}
-			// pair := PointToPair(point)
-
-			co := calculateIDW(data, point, pow)
-			grid[r][c] = co.Weight
+	//Chunk
+	if useChunk {
+		ChunkSolve(grid, data, pow)
+	} else {
+		//Unchunk
+		for r := 0; r < len(grid); r++ {
+			for c := 0; c < len(grid[0]); c++ {
+				pt := calculateIDW(data, r, c, pow)
+				grid[r][c] = pt.Weight
+			}
 		}
 	}
 
@@ -84,27 +113,12 @@ func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_o
 	return nil
 }
 
-func chunkSolve(locs map[OrderedPair]Point, pow float64, channel chan ChunkStruct, start OrderedPair, end OrderedPair) {
-	var grid [][]float64
-	for r := start.X; r < end.X; r++ {
-		var row []float64
-		for c := start.Y; c < end.Y; c++ {
-			px := X_MIN_MAX_STEP[0] + float64(r)*X_MIN_MAX_STEP[2]
-			py := Y_MIN_MAX_STEP[0] + float64(c)*Y_MIN_MAX_STEP[2]
-			point := Point{px, py, 0}
-			row = append(row, calculateIDW(locs, point, pow).Weight)
-		}
-		grid = append(grid, row)
-
-	}
-	channel <- ChunkStruct{start, grid}
-
-}
-
-func calculateIDW(locs map[OrderedPair]Point, p0 Point, exp float64) Point {
+func calculateIDW(locs map[OrderedPair]Point, r int, c int, exp float64) Point {
 	denom := 0.0
 
-	p_given, exists := locs[PointToPair(p0)]
+	p0 := RCToPoint(r, c)
+
+	p_given, exists := locs[RCToPair(r, c)]
 	if exists {
 		return p_given
 	}

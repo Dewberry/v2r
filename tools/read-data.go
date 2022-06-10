@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func ReadData(filepath string) (string, error) {
+func ReadData(filepath string, useChunk bool) (string, error) {
 	start := time.Now()
 
 	pointsList, err := ReadIn(filepath)
@@ -25,7 +25,7 @@ func ReadData(filepath string) (string, error) {
 
 	outfile := filepath
 	for x := 0; x < iterations; x++ {
-		go MainSolve(data, filepath, pow+float64(x)*step, true, outfile, channel)
+		go MainSolve(data, filepath, outfile, pow+float64(x)*step, true, useChunk, channel)
 	}
 
 	for x := 0; x < iterations; x++ {
@@ -33,10 +33,10 @@ func ReadData(filepath string) (string, error) {
 		fmt.Println(received_string)
 	}
 
-	return fmt.Sprintf("Completed %v iterations in %v", iterations, time.Since(start)), nil
+	return fmt.Sprintf("Completed %v iterations in %v - Chunking used: %v", iterations, time.Since(start), useChunk), nil
 }
 
-func ReadPGData(db *sqlx.DB, query string, xStep float64, yStep float64) (string, error) {
+func ReadPGData(db *sqlx.DB, query string, xStep float64, yStep float64, useChunk bool) (string, error) {
 
 	start := time.Now()
 	rows, err := db.Query("SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;")
@@ -75,7 +75,7 @@ func ReadPGData(db *sqlx.DB, query string, xStep float64, yStep float64) (string
 	// go MainSolve(data, "data/sample", 3.0, true, channel)
 	outfile := fmt.Sprintf("data/step%.0f", CELL)
 	for x := 0; x < iterations; x++ {
-		go MainSolve(data, "data/sample", pow+float64(x)*step, true, outfile, channel)
+		go MainSolve(data, "data/sample", outfile, pow+float64(x)*step, true, useChunk, channel)
 	}
 
 	for x := 0; x < iterations; x++ {
@@ -83,5 +83,5 @@ func ReadPGData(db *sqlx.DB, query string, xStep float64, yStep float64) (string
 		fmt.Println(received_string)
 	}
 
-	return fmt.Sprintf("Completed %v iterations in %v", iterations, time.Since(start)), nil
+	return fmt.Sprintf("Completed %v iterations in %v - Chunking used: %v", iterations, time.Since(start), useChunk), nil
 }
