@@ -205,11 +205,11 @@ func GetExcelColumn(i int) string {
 	return strings.TrimRight(endcol, "1")
 
 }
-func PrintExcel(data [][]float64, filepath string, pow float64) error {
+func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	filename := fmt.Sprintf("%s-output.xlsx", strings.TrimSuffix(filepath, ".txt"))
 	sheetname := fmt.Sprintf("pow%v", pow)
 
-	grid := Transpose(data)
+	// grid := Transpose(data)
 
 	file, err := excelize.OpenFile(filename)
 	if err != nil {
@@ -275,7 +275,7 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64
 	writer := bufio.NewWriter(f)
 	header := []string{
 		fmt.Sprintf("ncols\t%v", len(grid[0])),
-		fmt.Sprintf("\nnrows\t%v", len(grid)-1),
+		fmt.Sprintf("\nnrows\t%v", len(grid)),
 		fmt.Sprintf("\nyllcorner\t%v", Y_MIN_MAX_STEP[0]),
 		fmt.Sprintf("\nxllcorner\t%v", X_MIN_MAX_STEP[0]),
 		fmt.Sprintf("\ncellsize\t%v", cellsize),
@@ -289,12 +289,13 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64
 		}
 	}
 
-	for r := 0; r < len(grid); r++ {
+	for r := len(grid) - 1; r >= 0; r-- {
 		outstring := "\n"
 		for c := 0; c < len(grid[0]); c++ {
 			outstring += fmt.Sprintf("%.2f ", grid[r][c])
 		}
 		writer.WriteString(outstring)
+		writer.Flush()
 	}
 	return nil
 }

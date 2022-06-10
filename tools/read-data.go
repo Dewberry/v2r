@@ -8,31 +8,32 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func ReadData(filepath string) error {
+func ReadData(filepath string) (string, error) {
+	start := time.Now()
 
 	pointsList, err := ReadIn(filepath)
 	if err != nil {
-		return err
+		return "ReadIn() error", err
 	}
 	data := MakeCoordSpace(pointsList)
 
-	channel := make(chan string, 6)
-	i := 0
-	for pow := 1.0; pow < 3.5; pow += .5 {
+	step := .5
+	pow := 1.7
+	iterations := 1
+	channel := make(chan string, iterations)
+	// go MainSolve(data, "data/sample", 3.0, true, channel)
 
-		i++
-		err = MainSolve(data, filepath, pow, true, channel)
-		if err != nil {
-			return err
-		}
+	outfile := filepath
+	for x := 0; x < iterations; x++ {
+		go MainSolve(data, filepath, pow+float64(x)*step, true, outfile, channel)
 	}
 
-	for x := 0; x < i; x++ {
+	for x := 0; x < iterations; x++ {
 		received_string := <-channel
 		fmt.Println(received_string)
 	}
 
-	return nil
+	return fmt.Sprintf("Completed %v iterations in %v", iterations, time.Since(start)), nil
 }
 
 func ReadPGData(db *sqlx.DB, query string) (string, error) {
@@ -76,8 +77,9 @@ func ReadPGData(db *sqlx.DB, query string) (string, error) {
 
 	channel := make(chan string, iterations)
 	// go MainSolve(data, "data/sample", 3.0, true, channel)
+	outfile := "data/sample"
 	for x := 0; x < iterations; x++ {
-		go MainSolve(data, "data/sample", pow+float64(x)*step, true, channel)
+		go MainSolve(data, "data/sample", pow+float64(x)*step, true, outfile, channel)
 	}
 
 	for x := 0; x < iterations; x++ {

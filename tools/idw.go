@@ -13,14 +13,14 @@ type ChunkStruct struct {
 	data [][]float64
 }
 
-func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, channel chan string) error {
+func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, outfile string, channel chan string) error {
 	start := time.Now()
 
 	xScale := int((1 + X_MIN_MAX_STEP[1] - X_MIN_MAX_STEP[0]) / X_MIN_MAX_STEP[2])
 	yScale := int((1 + Y_MIN_MAX_STEP[1] - Y_MIN_MAX_STEP[0]) / Y_MIN_MAX_STEP[2])
-	var grid = make([][]float64, xScale)
+	var grid = make([][]float64, yScale)
 	for i := range grid {
-		grid[i] = make([]float64, yScale)
+		grid[i] = make([]float64, xScale)
 	}
 	fmt.Println("MIN VALUE | MAX VALUE | STEP")
 	fmt.Println("X", X_MIN_MAX_STEP)
@@ -42,24 +42,23 @@ func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_o
 
 	// 	for r:= 0; r <
 	// }
-	for x := 0; x < len(grid); x++ {
-		for y := 0; y < len(grid[0]); y++ {
-			px := X_MIN_MAX_STEP[0] + float64(x)*X_MIN_MAX_STEP[2]
-			py := Y_MIN_MAX_STEP[0] + float64(y)*Y_MIN_MAX_STEP[2]
+	for r := 0; r < len(grid); r++ {
+		for c := 0; c < len(grid[0]); c++ {
+			px := X_MIN_MAX_STEP[0] + float64(c)*X_MIN_MAX_STEP[2]
+			py := Y_MIN_MAX_STEP[0] + float64(r)*Y_MIN_MAX_STEP[2]
 			point := Point{px, py, 0}
 			// pair := PointToPair(point)
 
 			co := calculateIDW(data, point, pow)
-			grid[x][y] = co.Weight
+			grid[r][c] = co.Weight
 		}
 	}
-	fmt.Printf("idw finished: %v\n", time.Since(start))
 
 	start_print := time.Now()
 
 	if print_out {
-		// innerErr := PrintExcel(grid, filepath, pow)
-		innerErr := PrintAscii(grid, filepath, pow, 100.0)
+		// innerErr := PrintExcel(grid, outfile, pow)
+		innerErr := PrintAscii(grid, outfile, pow, 1000.0)
 
 		if innerErr != nil {
 			return innerErr
@@ -67,7 +66,6 @@ func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_o
 	}
 	channel <- fmt.Sprintf("pow%v [%vX%v] completed in %v, print took %v", pow, len(grid), len(grid[0]), time.Since(start), time.Since(start_print))
 	return nil
-
 }
 
 func chunkSolve(locs map[OrderedPair]Point, pow float64, channel chan ChunkStruct, start OrderedPair, end OrderedPair) {
