@@ -2,15 +2,31 @@ package tools
 
 import (
 	"fmt"
+	"math"
 	"time"
 )
 
 var X_MIN_MAX_STEP [3]float64 = [3]float64{0, 0, 1}
 var Y_MIN_MAX_STEP [3]float64 = [3]float64{0, 0, 1}
+var CELL float64 = 1.0
 
 type ChunkStruct struct {
 	pair OrderedPair
 	data [][]float64
+}
+
+func ConfigureGlobals(min_x, max_x, xStep, min_y, max_y, yStep float64) {
+	SetStep(math.Sqrt(xStep * yStep)) // QGIS takes square grid
+	SetMinMax(min_x, max_x, xStep, min_y, max_y, yStep)
+}
+
+func SetMinMax(min_x, max_x, step_x, min_y, max_y, step_y float64) {
+	X_MIN_MAX_STEP = [3]float64{min_x, max_x, step_x}
+	Y_MIN_MAX_STEP = [3]float64{min_y, max_y, step_y}
+}
+
+func SetStep(val float64) {
+	CELL = val
 }
 
 func MainSolve(data map[OrderedPair]Point, filepath string, pow float64, print_out bool, outfile string, channel chan string) error {

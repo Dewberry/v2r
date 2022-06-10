@@ -36,7 +36,7 @@ func ReadData(filepath string) (string, error) {
 	return fmt.Sprintf("Completed %v iterations in %v", iterations, time.Since(start)), nil
 }
 
-func ReadPGData(db *sqlx.DB, query string) (string, error) {
+func ReadPGData(db *sqlx.DB, query string, xStep float64, yStep float64) (string, error) {
 
 	start := time.Now()
 	rows, err := db.Query("SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;")
@@ -64,11 +64,7 @@ func ReadPGData(db *sqlx.DB, query string) (string, error) {
 
 		db_items = append(db_items, Point{st_x, st_y, elev})
 	}
-
-	xStep := 1000.0
-	yStep := 1000.0
-
-	SetMinMax(min_x, max_x, xStep, min_y, max_y, yStep)
+	ConfigureGlobals(min_x, max_x, xStep, min_y, max_y, yStep)
 	data := MakeCoordSpace(db_items)
 
 	step := .5
@@ -77,7 +73,7 @@ func ReadPGData(db *sqlx.DB, query string) (string, error) {
 
 	channel := make(chan string, iterations)
 	// go MainSolve(data, "data/sample", 3.0, true, channel)
-	outfile := "data/sample"
+	outfile := fmt.Sprintf("data/step%.0f", CELL)
 	for x := 0; x < iterations; x++ {
 		go MainSolve(data, "data/sample", pow+float64(x)*step, true, outfile, channel)
 	}

@@ -8,24 +8,26 @@ import (
 
 func main() {
 	// From txt file
-	inputFile := "data/small/nb2.txt"
-	result, err := tools.ReadData(inputFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// db := tools.DBInit()
-
-	// err := tools.PingWithTimeout(db)
-	// if err != nil {
-	// 	fmt.Println("Connected to database?", err)
-	// }
-
-	// inputQuery := ""
-	// result, err := tools.ReadPGData(db, inputQuery)
+	// inputFile := "data/small/nb2.txt"
+	// result, err := tools.ReadData(inputFile)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+
+	db := tools.DBInit()
+
+	err := tools.PingWithTimeout(db)
+	if err != nil {
+		fmt.Println("Connected to database?", err)
+	}
+
+	inputQuery := ""
+	xStep := 1000.0
+	yStep := 1000.0
+	result, err := tools.ReadPGData(db, inputQuery, xStep, yStep)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	fmt.Println(result)
 

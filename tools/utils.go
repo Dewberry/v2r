@@ -51,11 +51,6 @@ func DistExp(p0, p Point, exp float64) float64 {
 	return math.Pow(euclid_dist(p, p0), -exp)
 }
 
-func SetMinMax(min_x, max_x, step_x, min_y, max_y, step_y float64) {
-	X_MIN_MAX_STEP = [3]float64{min_x, max_x, step_x}
-	Y_MIN_MAX_STEP = [3]float64{min_y, max_y, step_y}
-}
-
 // TODO: implement boundaries
 // TODO: implement speedups
 func CalculateWeight(cell Point, data []Point, exp float64) float64 {
@@ -276,9 +271,9 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64
 	header := []string{
 		fmt.Sprintf("ncols\t%v", len(grid[0])),
 		fmt.Sprintf("\nnrows\t%v", len(grid)),
-		fmt.Sprintf("\nyllcorner\t%v", Y_MIN_MAX_STEP[0]),
-		fmt.Sprintf("\nxllcorner\t%v", X_MIN_MAX_STEP[0]),
-		fmt.Sprintf("\ncellsize\t%v", cellsize),
+		fmt.Sprintf("\nyllcorner\t%.1f", Y_MIN_MAX_STEP[0]),
+		fmt.Sprintf("\nxllcorner\t%.1f", X_MIN_MAX_STEP[0]),
+		fmt.Sprintf("\ncellsize\t%.1f", CELL),
 		"\nNODATA_value\t-9999",
 	}
 
