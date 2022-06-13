@@ -28,8 +28,8 @@ type Coord struct {
 }
 
 func PointToPair(p Point) OrderedPair {
-	newX := int((p.X - X_MIN_MAX_STEP[0]) / X_MIN_MAX_STEP[2])
-	newY := int((p.Y - Y_MIN_MAX_STEP[0]) / Y_MIN_MAX_STEP[2])
+	newX := int((p.X - GlobalX[0]) / GlobalX[2])
+	newY := int((p.Y - GlobalY[0]) / GlobalY[2])
 	return OrderedPair{newX, newY}
 }
 
@@ -41,8 +41,8 @@ func Min(a, b int) int {
 }
 
 func RCToPoint(r, c int) Point {
-	px := X_MIN_MAX_STEP[0] + float64(c)*X_MIN_MAX_STEP[2]
-	py := Y_MIN_MAX_STEP[0] + float64(r)*Y_MIN_MAX_STEP[2]
+	px := GlobalX[0] + float64(c)*GlobalX[2]
+	py := GlobalY[0] + float64(r)*GlobalY[2]
 	return (Point{px, py, 0})
 }
 func PairToPoint(pair OrderedPair) Point {
@@ -57,7 +57,7 @@ func PairToRC(pair OrderedPair) (int, int) {
 	return pair.Y, pair.X
 }
 
-func euclid_dist(p1, p2 Point) float64 {
+func euclidDist(p1, p2 Point) float64 {
 	total := math.Pow(p1.X-p2.X, 2) + math.Pow(p1.Y-p2.Y, 2)
 	return math.Pow(total, .5)
 }
@@ -68,37 +68,37 @@ func GetWeight(p1 Point) float64 {
 
 // p0 is grid location, p is weighted point to compare to
 func PartialWeight(p0, p Point, exp float64) float64 {
-	return p.Weight / (math.Pow(euclid_dist(p, p0), exp))
+	return p.Weight / (math.Pow(euclidDist(p, p0), exp))
 }
 
 func DistExp(p0, p Point, exp float64) float64 {
-	return math.Pow(euclid_dist(p, p0), -exp)
+	return math.Pow(euclidDist(p, p0), -exp)
 }
 
 // TODO: implement boundaries
 // TODO: implement speedups
-func CalculateWeight(cell Point, data []Point, exp float64) float64 {
+func CalculateWeight(cell Point, data *[]Point, exp float64) float64 {
 	total := 0.0
-	for _, p := range data {
-		total += p.Weight / (math.Pow(euclid_dist(cell, p), exp))
+	for _, p := range *data {
+		total += p.Weight / (math.Pow(euclidDist(cell, p), exp))
 	}
 	return math.Pow(total, .5)
 }
 
-func createCoordPoint(db_elem Point, ch chan Coord) {
-	pair := PointToPair(db_elem)
-	ch <- Coord{Point{db_elem.X, db_elem.Y, db_elem.Weight}, pair}
+func createCoordPoint(p Point, ch chan Coord) {
+	pair := PointToPair(p)
+	ch <- Coord{Point{p.X, p.Y, p.Weight}, pair}
 }
 
-func MakeCoordSpace(db_items []Point) map[OrderedPair]Point {
+func MakeCoordSpace(listPoints *[]Point) map[OrderedPair]Point {
 	seen := map[OrderedPair]Point{}
 
-	channel := make(chan Coord, len(db_items))
-	for _, db_elem := range db_items {
-		go createCoordPoint(db_elem, channel)
+	channel := make(chan Coord, len(*listPoints))
+	for _, p := range *listPoints {
+		go createCoordPoint(p, channel)
 	}
 
-	for i := 0; i < len(db_items); i++ {
+	for i := 0; i < len(*listPoints); i++ {
 		dataPoint := <-channel
 
 		pair := dataPoint.Pair
@@ -127,7 +127,7 @@ func ReadIn(f string) ([]Point, error) {
 	var data []Point
 	// var bounds []Point // to be implemented later
 
-	xStep, yStep := 1.0, 1.0
+	stepX, stepY := 1.0, 1.0
 	for sc.Scan() {
 		switch strings.Fields(sc.Text())[0] {
 		case "POINTS":
@@ -136,11 +136,11 @@ func ReadIn(f string) ([]Point, error) {
 		case "STEP":
 			sc.Scan()
 			fields := strings.Fields(sc.Text())
-			xStep, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
+			stepX, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
 			if err != nil {
 				return []Point{}, err
 			}
-			yStep, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
+			stepY, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
 			if err != nil {
 				return []Point{}, err
 			}
@@ -155,17 +155,17 @@ func ReadIn(f string) ([]Point, error) {
 					}
 
 					if d == 0 {
-						X_MIN_MAX_STEP[i] = val
+						GlobalX[i] = val
 					} else {
-						Y_MIN_MAX_STEP[i] = val
+						GlobalY[i] = val
 					}
 
 				}
 
 			}
-			X_MIN_MAX_STEP[2] = xStep
-			Y_MIN_MAX_STEP[2] = yStep
-			fmt.Println("reading in", "X:", X_MIN_MAX_STEP, "\ty:", Y_MIN_MAX_STEP)
+			GlobalX[2] = stepX
+			GlobalY[2] = stepY
+			fmt.Println("reading in", "X:", GlobalX, "\ty:", GlobalY)
 			return data, nil
 
 		}
@@ -294,8 +294,8 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64
 	header := []string{
 		fmt.Sprintf("ncols\t%v", len(grid[0])),
 		fmt.Sprintf("\nnrows\t%v", len(grid)),
-		fmt.Sprintf("\nyllcorner\t%.1f", Y_MIN_MAX_STEP[0]),
-		fmt.Sprintf("\nxllcorner\t%.1f", X_MIN_MAX_STEP[0]),
+		fmt.Sprintf("\nyllcorner\t%.1f", GlobalY[0]),
+		fmt.Sprintf("\nxllcorner\t%.1f", GlobalX[0]),
 		fmt.Sprintf("\ncellsize\t%.1f", CELL),
 		"\nNODATA_value\t-9999",
 	}

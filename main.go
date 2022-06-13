@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	useChunk := false
+	useChunk := true
 
 	// From txt file
 	// inputFile := "data/small/nb2.txt"
@@ -25,9 +25,9 @@ func main() {
 
 	inputQuery := ""
 	//step must be the same for qgis output
-	xStep := 100.0
-	yStep := 100.0
-	result, err := tools.ReadPGData(db, inputQuery, xStep, yStep, useChunk)
+	stepX := 20.0
+	stepY := 20.0
+	result, err := tools.ReadPGData(db, inputQuery, stepX, stepY, useChunk)
 	if err != nil {
 		log.Fatal(err)
 	}
