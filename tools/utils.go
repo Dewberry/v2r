@@ -234,7 +234,7 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	return nil
 }
 
-func PrintAscii(grid *[]*[][]float64, filepath string, pow float64, chunkR int, chunkC int) error {
+func PrintAscii(grid [][]float64, filepath string, pow float64, chunkR int, chunkC int) error {
 	filename := fmt.Sprintf("%s.asc", filepath)
 
 	f, err := os.Create(filename)
@@ -260,15 +260,34 @@ func PrintAscii(grid *[]*[][]float64, filepath string, pow float64, chunkR int, 
 		}
 	}
 
+	stringChannel := make(chan StringInt, numRows)
 	for r := numRows - 1; r >= 0; r-- {
-		outstring := "\n"
-		start, end := getChunkBlock(r, chunkR, chunkC)
-		for ; start < end; start++ {
-			// outstring += (*(*grid)[start])[r%chunkR]
-			outstring += " "
-		}
-		writer.WriteString("/n")
+		go makeString(grid, r, stringChannel)
+	}
+	rows := make([]string, numRows)
+	for r := numRows - 1; r >= 0; r-- {
+		stringInt := <-stringChannel
+		rows[stringInt.Row] = stringInt.PrintString
+	}
+	for r := numRows - 1; r >= 0; r-- {
+		writer.WriteString(rows[r])
 	}
 	writer.Flush()
+
 	return nil
+}
+
+type StringInt struct {
+	PrintString string
+	Row         int
+}
+
+func makeString(grid [][]float64, currentRow int, stringChannel chan StringInt) {
+	_, numCols := GetDimensions()
+
+	outstring := "\n"
+	for c := 0; c < numCols; c++ {
+		outstring += fmt.Sprintf("%.2f ", grid[currentRow][c])
+	}
+	stringChannel <- StringInt{outstring, currentRow}
 }

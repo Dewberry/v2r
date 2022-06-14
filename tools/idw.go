@@ -11,8 +11,8 @@ var GlobalY [3]float64 = [3]float64{0, 0, 1}
 var CELL float64 = 1.0
 
 type ChunkStruct struct {
-	ChunkNum int
-	Data     *[][]float64
+	Pair OrderedPair
+	Data [][]float64
 }
 
 func ConfigureGlobals(minX, maxX, stepX, minY, maxY, stepY float64) {
@@ -29,32 +29,50 @@ func SetStep(val float64) {
 	CELL = val
 }
 
-func ChunkSolve(data *map[OrderedPair]Point, pow float64, chunkR int, chunkC int) *[]*[][]float64 {
+func ChunkSolve(data *map[OrderedPair]Point, pow float64, chunkR int, chunkC int) [][]float64 {
 	numRows, numCols := GetDimensions()
 
 	totalChunks := 0
 	chunkChannel := make(chan ChunkStruct, 10000)
+	grid := make([][]float64, numRows)
+	for r := 0; r < numRows; r++ {
+		grid[r] = make([]float64, numCols)
+	}
+
 	for r := 0; r < numRows; r += chunkR {
 		for c := 0; c < numCols; c += chunkC {
-			go chunkSolveHelper(data, pow, RCToPair(r, c), RCToPair(Min(r+chunkR, numRows), Min(c+chunkC, numCols)), totalChunks, chunkChannel)
+			go chunkSolveHelper(data, pow, RCToPair(r, c), RCToPair(Min(r+chunkR, numRows), Min(c+chunkC, numCols)), chunkChannel)
 			totalChunks++
 		}
 	}
-	partitionedGrid := make([]*[][]float64, totalChunks)
+
 	// fmt.Println("total chunks:", totalChunks)
 
+	updateChannel := make(chan bool, 100)
 	for i := 0; i < totalChunks; i++ {
 		gridChunk := <-chunkChannel
-		chunkUpdate(&partitionedGrid, &gridChunk)
+		go chunkUpdate(&grid, &gridChunk, updateChannel)
 	}
-	return &partitionedGrid
+
+	for i := 0; i < totalChunks; i++ {
+		<-updateChannel
+	}
+	return grid
 }
 
-func chunkUpdate(partitionedGrid *[]*[][]float64, gridChunk *ChunkStruct) {
-	(*partitionedGrid)[gridChunk.ChunkNum] = gridChunk.Data
+func chunkUpdate(grid *[][]float64, gridChunk *ChunkStruct, channel chan bool) {
+	r0, c0 := PairToRC(gridChunk.Pair)
+
+	for r := 0; r < len(gridChunk.Data); r++ {
+		for c := 0; c < len(gridChunk.Data[0]); c++ {
+			(*grid)[r0+r][c0+c] = gridChunk.Data[r][c]
+		}
+	}
+
+	channel <- true
 }
 
-func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPair, end OrderedPair, chunkNum int, channel chan ChunkStruct) {
+func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPair, end OrderedPair, channel chan ChunkStruct) {
 	rStart, cStart := PairToRC(start)
 	rEnd, cEnd := PairToRC(end)
 	grid := make([][]float64, rEnd-rStart)
@@ -66,7 +84,7 @@ func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPai
 		grid[r-rStart] = row
 	}
 
-	channel <- ChunkStruct{chunkNum, &grid}
+	channel <- ChunkStruct{start, grid}
 }
 
 // (x, y) and r, c change all to r, c
@@ -99,14 +117,11 @@ func MainSolve(data *map[OrderedPair]Point, outfile string, pow float64, printOu
 
 	if printOut {
 		// innerErr := PrintExcel(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
-		// innerErr := PrintAscii(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow, chunkR, chunkC)
+		innerErr := PrintAscii(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow, chunkR, chunkC)
 
-		// if innerErr != nil {
-		// 	return innerErr
-		// }
-	}
-	if 1 == 2 {
-		fmt.Println(grid)
+		if innerErr != nil {
+			return innerErr
+		}
 	}
 	channel <- fmt.Sprintf("pow%v [%vX%v] completed in %v, print took %v", pow, numRows, numCols, time.Since(start), time.Since(startPrint))
 	return nil

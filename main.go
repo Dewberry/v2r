@@ -11,8 +11,8 @@ func main() {
 	start := time.Now()
 
 	//variables to change
-	chunkR := 20
-	chunkC := 25
+	chunkR := 200
+	chunkC := 250
 	printOut := true
 	powStep := .5
 	powStart := 1.7 // inclusive
