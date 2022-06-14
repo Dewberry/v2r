@@ -2,7 +2,6 @@ package tools
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"log"
 	"math"
@@ -19,7 +18,7 @@ type Point struct {
 }
 
 type OrderedPair struct {
-	X, Y int
+	R, C int
 }
 
 type Coord struct {
@@ -28,9 +27,7 @@ type Coord struct {
 }
 
 func PointToPair(p Point) OrderedPair {
-	newX := int((p.X - GlobalX[0]) / GlobalX[2])
-	newY := int((p.Y - GlobalY[0]) / GlobalY[2])
-	return OrderedPair{newX, newY}
+	return OrderedPair{int((p.Y - GlobalY[0]) / GlobalY[2]), int((p.X - GlobalX[0]) / GlobalX[2])}
 }
 
 func Min(a, b int) int {
@@ -46,15 +43,31 @@ func RCToPoint(r, c int) Point {
 	return (Point{px, py, 0})
 }
 func PairToPoint(pair OrderedPair) Point {
-	return RCToPoint(pair.Y, pair.X)
+	return RCToPoint(pair.R, pair.C)
 }
 
 func RCToPair(r, c int) OrderedPair {
-	return OrderedPair{c, r}
+	return OrderedPair{r, c}
 }
 
 func PairToRC(pair OrderedPair) (int, int) {
-	return pair.Y, pair.X
+	return pair.R, pair.C
+}
+
+func GetDimensions() (int, int) {
+	cols := int((1 + GlobalX[1] - GlobalX[0]) / GlobalX[2]) // (1 + max - min)/step
+	rows := int((1 + GlobalY[1] - GlobalY[0]) / GlobalY[2])
+	return rows, cols
+}
+
+func getChunkBlock(row, chunkR, chunkC int) (int, int) {
+	_, numCols := GetDimensions()
+	// numChunksOnRow := int(math.Ceil(float64(numRows) / float64(chunkR)))
+	numChunksOnCol := int(math.Ceil(float64(numCols) / float64(chunkC)))
+
+	start := row / chunkR * numChunksOnCol
+	return start, start + numChunksOnCol
+
 }
 
 func euclidDist(p1, p2 Point) float64 {
@@ -114,67 +127,6 @@ func MakeCoordSpace(listPoints *[]Point) map[OrderedPair]Point {
 	return seen
 }
 
-func ReadIn(f string) ([]Point, error) {
-	file, err := os.Open(f)
-	if err != nil {
-		return []Point{}, err
-	}
-
-	defer file.Close()
-
-	sc := bufio.NewScanner(file)
-
-	var data []Point
-	// var bounds []Point // to be implemented later
-
-	stepX, stepY := 1.0, 1.0
-	for sc.Scan() {
-		switch strings.Fields(sc.Text())[0] {
-		case "POINTS":
-			data = addPoints(sc)
-
-		case "STEP":
-			sc.Scan()
-			fields := strings.Fields(sc.Text())
-			stepX, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
-			if err != nil {
-				return []Point{}, err
-			}
-			stepY, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
-			if err != nil {
-				return []Point{}, err
-			}
-
-		case "ESTIMATE":
-			for d := 0; d < 2; d++ {
-				sc.Scan()
-				for i, val := range strings.Fields(sc.Text()) {
-					val, innerErr := strconv.ParseFloat(val, 64)
-					if innerErr != nil {
-						return data, innerErr
-					}
-
-					if d == 0 {
-						GlobalX[i] = val
-					} else {
-						GlobalY[i] = val
-					}
-
-				}
-
-			}
-			GlobalX[2] = stepX
-			GlobalY[2] = stepY
-			fmt.Println("reading in", "X:", GlobalX, "\ty:", GlobalY)
-			return data, nil
-
-		}
-
-	}
-	return data, errors.New("ESTIMATE not in file")
-
-}
-
 func addPoints(sc *bufio.Scanner) []Point {
 	line := sc.Text()
 	numPoints, _ := strconv.Atoi(strings.TrimSpace(strings.TrimPrefix(line, "POINTS ")))
@@ -224,7 +176,7 @@ func GetExcelColumn(i int) string {
 
 }
 func PrintExcel(grid [][]float64, filepath string, pow float64) error {
-	filename := fmt.Sprintf("%s-output.xlsx", strings.TrimSuffix(filepath, ".txt"))
+	filename := fmt.Sprintf("%s.xlsx", filepath)
 	sheetname := fmt.Sprintf("pow%v", pow)
 
 	// grid := Transpose(data)
@@ -282,18 +234,19 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	return nil
 }
 
-func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64) error {
-	filename := fmt.Sprintf("%s-output.asc", strings.TrimSuffix(filepath, ".txt"))
+func PrintAscii(grid *[]*[][]float64, filepath string, pow float64, chunkR int, chunkC int) error {
+	filename := fmt.Sprintf("%s.asc", filepath)
 
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 
+	numRows, numCols := GetDimensions()
 	writer := bufio.NewWriter(f)
 	header := []string{
-		fmt.Sprintf("ncols\t%v", len(grid[0])),
-		fmt.Sprintf("\nnrows\t%v", len(grid)),
+		fmt.Sprintf("ncols\t%v", numCols),
+		fmt.Sprintf("\nnrows\t%v", numRows),
 		fmt.Sprintf("\nyllcorner\t%.1f", GlobalY[0]),
 		fmt.Sprintf("\nxllcorner\t%.1f", GlobalX[0]),
 		fmt.Sprintf("\ncellsize\t%.1f", CELL),
@@ -307,13 +260,15 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, cellsize float64
 		}
 	}
 
-	for r := len(grid) - 1; r >= 0; r-- {
+	for r := numRows - 1; r >= 0; r-- {
 		outstring := "\n"
-		for c := 0; c < len(grid[0]); c++ {
-			outstring += fmt.Sprintf("%.2f ", grid[r][c])
+		start, end := getChunkBlock(r, chunkR, chunkC)
+		for ; start < end; start++ {
+			// outstring += (*(*grid)[start])[r%chunkR]
+			outstring += " "
 		}
-		writer.WriteString(outstring)
-		writer.Flush()
+		writer.WriteString("/n")
 	}
+	writer.Flush()
 	return nil
 }
