@@ -17,8 +17,8 @@ func main() {
 	powStep := .5
 	powStart := 1.7 // inclusive
 	powStop := 1.7  // inclusive
-	stepX := 20.0
-	stepY := 20.0
+	stepX := 10.0
+	stepY := 10.0
 	inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
 	outfileFolder := "data/"
 	//variables to change

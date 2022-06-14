@@ -99,25 +99,12 @@ func MainSolve(data *map[OrderedPair]Point, outfile string, pow float64, printOu
 
 	grid := ChunkSolve(data, pow, chunkR, chunkC)
 
-	//Chunk
-	// if useChunk {
-	// 	ChunkSolve(&grid, data, pow)
-	// }
-	// else {
-	// 	//Unchunk
-	// 	for r := 0; r < len(grid); r++ {
-	// 		for c := 0; c < len(grid[0]); c++ {
-	// 			pt := calculateIDW(data, r, c, pow)
-	// 			grid[r][c] = pt.Weight
-	// 		}
-	// 	}
-	// }
-
 	startPrint := time.Now()
 
 	if printOut {
 		// innerErr := PrintExcel(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
-		innerErr := PrintAscii(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow, chunkR, chunkC)
+		// innerErr := PrintAscii(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow, chunkR, chunkC)
+		innerErr := WriteTif(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
 
 		if innerErr != nil {
 			return innerErr

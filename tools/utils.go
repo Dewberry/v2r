@@ -271,8 +271,8 @@ func PrintAscii(grid [][]float64, filepath string, pow float64, chunkR int, chun
 	}
 	for r := numRows - 1; r >= 0; r-- {
 		writer.WriteString(rows[r])
+		writer.Flush()
 	}
-	writer.Flush()
 
 	return nil
 }
