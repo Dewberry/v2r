@@ -8,6 +8,27 @@ import (
 )
 
 func main() {
+	// doIDW()
+	fill()
+}
+
+func fill() {
+	start := time.Now()
+	adjType := 8 // 4 or 8
+	filepath := "data/fill/clipped_wet_dry.tif"
+	outfile := fmt.Sprintf("data/fill/clipped_wet_dry_filled%v", adjType)
+	toleranceIsland := 40000.0
+	toleranceVoid := 22500.0
+
+	err := tools.AreaFill(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Finished Fill in %v", time.Since(start))
+
+}
+
+func doIDW() {
 	start := time.Now()
 
 	//variables to change
@@ -17,10 +38,11 @@ func main() {
 	powStep := .5
 	powStart := 1.7 // inclusive
 	powStop := 1.7  // inclusive
-	stepX := 10.0
-	stepY := 10.0
+	stepX := 20.0
+	stepY := 20.0
+	espg := 2284
 	inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
-	outfileFolder := "data/"
+	outfileFolder := "data/idw/"
 	//variables to change
 
 	// From txt file
@@ -51,7 +73,7 @@ func main() {
 	iterations := 1 + int((powStop-powStart)/powStep)
 	channel := make(chan string, iterations)
 	for pow := powStart; pow <= powStop; pow += powStep {
-		go tools.MainSolve(&data, outfile, pow, printOut, chunkR, chunkC, channel)
+		go tools.MainSolve(&data, outfile, pow, printOut, chunkR, chunkC, espg, channel)
 	}
 
 	for pow := powStart; pow <= powStop; pow += powStep {
@@ -60,5 +82,4 @@ func main() {
 	}
 
 	fmt.Printf("Completed %v iterations in %v\n", iterations, time.Since(start))
-
 }

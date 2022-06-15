@@ -88,7 +88,7 @@ func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPai
 }
 
 // (x, y) and r, c change all to r, c
-func MainSolve(data *map[OrderedPair]Point, outfile string, pow float64, printOut bool, chunkR int, chunkC int, channel chan string) error {
+func MainSolve(data *map[OrderedPair]Point, outfile string, pow float64, printOut bool, chunkR int, chunkC int, espg int, channel chan string) error {
 	start := time.Now()
 
 	numRows, numCols := GetDimensions()
@@ -104,7 +104,8 @@ func MainSolve(data *map[OrderedPair]Point, outfile string, pow float64, printOu
 	if printOut {
 		// innerErr := PrintExcel(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
 		// innerErr := PrintAscii(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow, chunkR, chunkC)
-		innerErr := WriteTif(grid, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
+		gdinfo := CreateGDalInfo(GlobalX[0], GlobalY[0], CELL, CELL, 7, espg)
+		innerErr := WriteTif(grid, gdinfo, fmt.Sprintf("%spow%.1f", outfile))
 
 		if innerErr != nil {
 			return innerErr
