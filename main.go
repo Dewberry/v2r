@@ -24,7 +24,7 @@ func fill() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Finished Fill in %v", time.Since(start))
+	fmt.Printf("Finished fill in %v\n", time.Since(start))
 
 }
 
