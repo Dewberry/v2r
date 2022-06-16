@@ -41,6 +41,13 @@ func Min(a, b int) int {
 	return b
 }
 
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func RCToPoint(r, c int) Point {
 	px := GlobalX[0] + float64(c)*GlobalX[2]
 	py := GlobalY[0] + float64(r)*GlobalY[2]
