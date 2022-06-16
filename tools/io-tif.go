@@ -110,6 +110,34 @@ func ReadTif(filepath string) ([]byte, GDalInfo, OrderedPair, error) {
 	return data, gdReturn, rowsAndCols, nil
 }
 
+func ReadTifChunk(filepath string, start OrderedPair, size OrderedPair) ([]byte, GDalInfo, OrderedPair, error) {
+	DS, err := gdal.Open(filepath, gdal.ReadOnly)
+	if err != nil {
+		return []byte{}, GDalInfo{}, OrderedPair{}, err
+	}
+
+	numCols := DS.RasterXSize()
+	numRows := DS.RasterYSize()
+	var rowsAndCols OrderedPair = OrderedPair{numRows, numCols}
+
+	info := gdal.Info(DS, nil)
+	inGT := DS.GeoTransform()
+
+	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), getESPG(info)}
+
+	gdReturn.XMin = inGT[0]
+
+	band := DS.RasterBand(1)
+
+	data := make([]byte, size.C*size.R)
+	err = band.IO(gdal.Read, start.C, start.R, numCols, numRows, data, size.C, size.R, 0, 0)
+	if err != nil {
+		return []byte{}, gdReturn, rowsAndCols, err
+	}
+
+	return data, gdReturn, rowsAndCols, nil
+}
+
 func WriteTifSquare(matrix [][]Square, GDINFO GDalInfo, filename string) error {
 	filename = fmt.Sprintf("%s.tiff", filename)
 

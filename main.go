@@ -14,20 +14,33 @@ func main() {
 
 func fill() {
 	start := time.Now()
-	adjType := 8 // 4 or 8
+
+	//variables to change
+	adjType := 4 // 4 or 8
 	filepath := "data/fill/clipped_wet_dry.tif"
 	outfile := fmt.Sprintf("data/fill/clipped_wet_dry_filled%v", adjType)
 	toleranceIsland := 40000.0
 	toleranceVoid := 22500.0
+	useChunk := false
+	chunkx := 150
+	chunky := 100
+	//variables to change
+	err := error(nil)
+	if useChunk {
+		err = tools.ChunkFillMap(filepath, outfile, toleranceIsland, toleranceVoid, adjType, tools.MakePair(chunky, chunkx))
+	} else {
+		err = tools.FullFillMap(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
+	}
 
-	err := tools.AreaFill(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fmt.Printf("Finished fill in %v\n", time.Since(start))
 
 }
 
+//add chunk printing
 func doIDW() {
 	start := time.Now()
 
@@ -38,8 +51,8 @@ func doIDW() {
 	powStep := .5
 	powStart := 1.7 // inclusive
 	powStop := 1.7  // inclusive
-	stepX := 20.0
-	stepY := 20.0
+	stepX := 10.0
+	stepY := 10.0
 	espg := 2284
 	inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
 	outfileFolder := "data/idw/"
