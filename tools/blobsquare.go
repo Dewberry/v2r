@@ -1,8 +1,10 @@
 package tools
 
 type Blob struct {
-	Elements []OrderedPair
-	IsWater  byte
+	Elements      []OrderedPair
+	NumFixed      int
+	ThresholdSize int
+	IsWater       byte
 }
 
 type Square struct {
@@ -24,14 +26,38 @@ func setSearched(areaMap *[][]Square, loc OrderedPair, searched bool) {
 	(*areaMap)[loc.R][loc.C].Searched = searched
 }
 
+func setFinalized(areaMap *[][]Square, loc OrderedPair, finalized bool) {
+	(*areaMap)[loc.R][loc.C].Finalized = finalized
+}
+
+func setWet(areaMap *[][]Square, loc OrderedPair, wet byte) {
+	(*areaMap)[loc.R][loc.C].IsWater = wet
+}
+
 func sameBlob(areaMap *[][]Square, loc1 OrderedPair, loc2 OrderedPair) bool {
 	return getSquarePair(areaMap, loc1).IsWater == getSquarePair(areaMap, loc2).IsWater
 }
 
-func updateMapFromBlob(areaMap *[][]Square, blob *Blob, wet byte) {
-	for _, loc := range blob.Elements {
-		(*areaMap)[loc.R][loc.C].IsWater = wet
-		(*areaMap)[loc.R][loc.C].Finalized = true
+// length of Elements list unless fixed > 0
+// then return fixed
+func GetNumElements(blob *Blob) int {
+	if blob.NumFixed > 0 {
+		return blob.NumFixed
+	}
+	return len(blob.Elements)
+}
+
+func BigBlob(blob *Blob) bool {
+	return blob.NumFixed > 0
+}
+
+func updateMapFromBlob(areaMap *[][]Square, blob *Blob, wet byte, finalized bool) {
+	for len(blob.Elements) > 0 {
+		blob.NumFixed++
+		loc := blob.Elements[0]
+		blob.Elements = blob.Elements[1:]
+		setWet(areaMap, loc, wet)
+		setFinalized(areaMap, loc, finalized)
 	}
 }
 
@@ -44,6 +70,11 @@ func inBounds(areaMap *[][]Square, loc OrderedPair) bool {
 	return loc.R >= 0 && loc.R < len(*areaMap) && loc.C >= 0 && loc.C < len((*areaMap)[0]) && getSquarePair(areaMap, loc).IsWater != 255
 }
 
-func growBlob(blob *Blob, loc OrderedPair) {
+func growBlob(areaMap *[][]Square, blob *Blob, loc OrderedPair) {
 	blob.Elements = append(blob.Elements, loc)
+	if blob.NumFixed > 0 || len(blob.Elements) >= blob.ThresholdSize {
+		// fmt.Println("before update", blob.NumFixed)
+		updateMapFromBlob(areaMap, blob, blob.IsWater, true)
+		// fmt.Println("after update", blob.NumFixed)
+	}
 }
