@@ -26,6 +26,10 @@ type Coord struct {
 	Pair OrderedPair
 }
 
+func MakePair(r int, c int) OrderedPair {
+	return OrderedPair{r, c}
+}
+
 func PointToPair(p Point) OrderedPair {
 	return OrderedPair{int((p.Y - GlobalY[0]) / GlobalY[2]), int((p.X - GlobalX[0]) / GlobalX[2])}
 }
