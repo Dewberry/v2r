@@ -2,8 +2,14 @@ package tools
 
 import (
 	"fmt"
+	"log"
 	"math"
 )
+
+type chunkFillStruct struct {
+	AreaMap [][]Square
+	Offset  OrderedPair
+}
 
 func searchBlob(areaMap *[][]Square, loc OrderedPair, adjType int, thresholdsize int, wet byte) (Blob, bool) {
 	blob := Blob{[]OrderedPair{loc}, 0, thresholdsize, wet}
@@ -73,12 +79,31 @@ func makeAreaMap(flattenedMap []byte, rowsAndCols OrderedPair) [][]Square {
 	return areaMap
 }
 
-func fillMatrix(areaMap *[][]Square, tolerance map[byte]int, pixelArea float64, adjType int) {
+func sliceAreaMap(areaMap *[][]Square, valid [4]int) {
+
+	// fmt.Printf("valid: %v\tprev dim [%vX%v]", valid, len(*areaMap), len((*areaMap)[0]))
+	*areaMap = (*areaMap)[valid[0]:valid[1]]
+	for r := 0; r < len(*areaMap); r++ {
+		(*areaMap)[r] = (*areaMap)[r][valid[2]:valid[3]]
+	}
+	// fmt.Printf("\tnew dim [%vX%v]\n", len(*areaMap), len((*areaMap)[0]))
+}
+
+func flattenAreaMap(areaMap [][]Square) []byte {
+	unwrappedMatrix := make([]byte, len(areaMap)*len(areaMap[0]))
+	for r := 0; r < len(areaMap); r++ {
+		for c := 0; c < len(areaMap[0]); c++ {
+			unwrappedMatrix[r*len(areaMap[0])+c] = areaMap[r][c].IsWater
+		}
+	}
+
+	return unwrappedMatrix
+}
+
+func FullFillMatrix(areaMap *[][]Square, tolerance map[byte]int, pixelArea float64, adjType int, verbose bool) {
 	islands, voids := 0, 0
 	islandArea, voidArea := 0, 0
 
-	largest := 0
-	fmt.Println(tolerance)
 	for r := 0; r < len(*areaMap); r++ {
 		for c := 0; c < len((*areaMap)[0]); c++ {
 			sq := getSquareRC(areaMap, r, c)
@@ -91,7 +116,6 @@ func fillMatrix(areaMap *[][]Square, tolerance map[byte]int, pixelArea float64, 
 				continue
 			}
 
-			largest = Max(largest, GetNumElements(&blob))
 			if !BigBlob(&blob) {
 				switch blob.IsWater {
 				case byte(0): // update island to water
@@ -104,15 +128,14 @@ func fillMatrix(areaMap *[][]Square, tolerance map[byte]int, pixelArea float64, 
 					voids++
 					voidArea += GetNumElements(&blob)
 				}
-			} else {
-				fmt.Println("big blob size ", blob.NumFixed)
 			}
 
 		}
 	}
-	fmt.Println(largest)
-	fmt.Printf("filled in %v islands covering %.2f sq footage\n", islands, float64(islandArea)*pixelArea)
-	fmt.Printf("filled in %v voids covering %.2f sq footage\n", voids, float64(voidArea)*pixelArea)
+	if verbose {
+		fmt.Printf("filled in %v islands covering %.2f sq footage\n", islands, float64(islandArea)*pixelArea)
+		fmt.Printf("filled in %v voids covering %.2f sq footage\n", voids, float64(voidArea)*pixelArea)
+	}
 }
 
 func FullFillMap(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, adjType int) error {
@@ -122,10 +145,10 @@ func FullFillMap(filepath string, outfile string, toleranceIsland float64, toler
 	}
 	areaSize := math.Abs(gdal.XCell * gdal.YCell)
 
-	fmt.Printf("island: %v\tvoid: %v\t[RowsXCols] [%vX%v]\tarea size: %v\n", toleranceIsland, toleranceVoid, len(areaMap), len(areaMap[0]), areaSize)
+	// fmt.Printf("island: %v\tvoid: %v\t[RowsXCols] [%vX%v]\tarea size: %v\n", toleranceIsland, toleranceVoid, len(areaMap), len(areaMap[0]), areaSize)
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}
-	fillMatrix(&areaMap, tolerance, areaSize, adjType)
-	return WriteTifSquare(areaMap, gdal, outfile)
+	FullFillMatrix(&areaMap, tolerance, areaSize, adjType, true)
+	return WriteTifSquare(flattenAreaMap(areaMap), gdal, OrderedPair{0, 0}, OrderedPair{len(areaMap), len(areaMap[0])}, OrderedPair{len(areaMap), len(areaMap[0])}, outfile, true)
 
 }
 
@@ -139,11 +162,89 @@ func getMatrixFull(filepath string) ([][]Square, GDalInfo, error) {
 
 }
 
-func ChunkFillMap(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, adjType int, chunkSize OrderedPair) error {
+func bufferSize(adjType int, tolerance map[byte]int) OrderedPair {
+	maxTolerance := Max(tolerance[byte(0)], tolerance[byte(1)])
+	switch adjType {
+	case 4:
+		return OrderedPair{maxTolerance, maxTolerance}
+
+	default: // case 8
+		return OrderedPair{maxTolerance * 2, maxTolerance * 2}
+	}
+}
+
+//Return start of chunk, size of chunk (both Ordered Pairs), valid
+func makeChunk(buffer OrderedPair, chunkSize OrderedPair, rowsAndCols OrderedPair, r int, c int) (OrderedPair, OrderedPair, [4]int) {
+	startBuffer := OrderedPair{Max(0, r-buffer.R), Max(0, c-buffer.C)}
+	endBuffer := OrderedPair{Min(rowsAndCols.R, r+chunkSize.R+buffer.R), Min(rowsAndCols.C, c+chunkSize.C+buffer.C)}
+	size := OrderedPair{endBuffer.R - startBuffer.R, endBuffer.C - startBuffer.C}
+
+	newR := Min(buffer.R, r)
+	newC := Min(buffer.C, c)
+	valid := [4]int{newR, Min(newR+chunkSize.R, size.R), newC, Min(newC+chunkSize.C, size.C)}
+
+	fmt.Print(startBuffer, size, valid)
+
+	return startBuffer, size, valid
+}
+
+func ChunkFillMap(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, chunkSize OrderedPair, adjType int, chanSize int) error {
+	gdal, rowsAndCols, err := GetTifInfo(filepath)
+	// fmt.Println("initial gdal", gdal)
+
+	areaSize := math.Abs(gdal.XCell * gdal.YCell)
+	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}
+
+	if err != nil {
+		return err
+	}
+
+	buffer := bufferSize(adjType, tolerance)
+	chunkChannel := make(chan chunkFillStruct, chanSize)
+	i := 0
+	for r := 0; r < rowsAndCols.R; r += chunkSize.R {
+		for c := 0; c < rowsAndCols.C; c += chunkSize.C {
+
+			start, size, valid := makeChunk(buffer, chunkSize, rowsAndCols, r, c)
+
+			ChunkFillSolve(filepath, gdal, tolerance, start, size, valid, areaSize, adjType, chunkChannel)
+
+			completedChunk := <-chunkChannel
+			bufferSize := OrderedPair{len(completedChunk.AreaMap), len(completedChunk.AreaMap[0])}
+
+			WriteTifSquare(flattenAreaMap(completedChunk.AreaMap), gdal, completedChunk.Offset, rowsAndCols, bufferSize, outfile, i == 0)
+			i++
+		}
+	}
+
 	return nil
+}
+
+func ChunkFillSolve(filepath string, gdal GDalInfo, tolerance map[byte]int, offset OrderedPair, size OrderedPair, valid [4]int,
+	areaSize float64, adjType int, chunkChannel chan chunkFillStruct) {
+	areaMap, err := getMatrixChunk(filepath, offset, size)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	FullFillMatrix(&areaMap, tolerance, areaSize, adjType, false)
+	sliceAreaMap(&areaMap, valid)
+
+	// gdal.XMin += gdal.XCell * float64(start.C+valid[0])
+	// gdal.YMin += gdal.YCell * float64(start.R+valid[2])
+
+	// fmt.Println(offset, size, valid)
+	// fmt.Println(gdal.XMin, gdal.YMin, start)
+
+	chunkChannel <- chunkFillStruct{areaMap, OrderedPair{offset.R + valid[0], offset.C + valid[2]}}
 
 }
 
-func getMatrixChunk(filepath string, chunkSize OrderedPair) {
-	return
+func getMatrixChunk(filepath string, start OrderedPair, size OrderedPair) ([][]Square, error) {
+	flattenedMap, err := ReadTifChunk(filepath, start, size)
+	if err != nil {
+		return [][]Square{}, err
+	}
+
+	return makeAreaMap(flattenedMap, size), nil
 }
