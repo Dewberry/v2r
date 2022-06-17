@@ -10,7 +10,7 @@ var GlobalX [3]float64 = [3]float64{0, 0, 1}
 var GlobalY [3]float64 = [3]float64{0, 0, 1}
 var CELL float64 = 1.0
 
-type ChunkStruct struct {
+type chunkIDW struct {
 	Pair OrderedPair
 	Data [][]float64
 }
@@ -33,7 +33,7 @@ func ChunkSolve(data *map[OrderedPair]Point, pow float64, chunkR int, chunkC int
 	numRows, numCols := GetDimensions()
 
 	totalChunks := 0
-	chunkChannel := make(chan ChunkStruct, 10000)
+	chunkChannel := make(chan chunkIDW, 10000)
 	grid := make([][]float64, numRows)
 	for r := 0; r < numRows; r++ {
 		grid[r] = make([]float64, numCols)
@@ -60,7 +60,7 @@ func ChunkSolve(data *map[OrderedPair]Point, pow float64, chunkR int, chunkC int
 	return grid
 }
 
-func chunkUpdate(grid *[][]float64, gridChunk *ChunkStruct, channel chan bool) {
+func chunkUpdate(grid *[][]float64, gridChunk *chunkIDW, channel chan bool) {
 	r0, c0 := PairToRC(gridChunk.Pair)
 
 	for r := 0; r < len(gridChunk.Data); r++ {
@@ -72,7 +72,7 @@ func chunkUpdate(grid *[][]float64, gridChunk *ChunkStruct, channel chan bool) {
 	channel <- true
 }
 
-func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPair, end OrderedPair, channel chan ChunkStruct) {
+func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPair, end OrderedPair, channel chan chunkIDW) {
 	rStart, cStart := PairToRC(start)
 	rEnd, cEnd := PairToRC(end)
 	grid := make([][]float64, rEnd-rStart)
@@ -84,7 +84,7 @@ func chunkSolveHelper(locs *map[OrderedPair]Point, pow float64, start OrderedPai
 		grid[r-rStart] = row
 	}
 
-	channel <- ChunkStruct{start, grid}
+	channel <- chunkIDW{start, grid}
 }
 
 // (x, y) and r, c change all to r, c

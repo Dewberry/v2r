@@ -4,6 +4,7 @@ import (
 	"app/tools"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -16,18 +17,28 @@ func fill() {
 	start := time.Now()
 
 	//variables to change
-	adjType := 4 // 4 or 8
-	filepath := "data/fill/clipped_wet_dry.tif"
-	outfile := fmt.Sprintf("data/fill/clipped_wet_dry_filled%v", adjType)
-	toleranceIsland := 40000.0
-	toleranceVoid := 22500.0
-	useChunk := false
+	adjType := 8 // 4 or 8
+	filepath := "data/cleaner/clipped_wet_dry.tif"
+	// toleranceIsland := 40000.0
+	// toleranceVoid := 22500.0
+	// useChunk := false
+	toleranceIsland := 400.0
+	toleranceVoid := 225.0
+	useChunk := true
 	chunkx := 150
 	chunky := 100
+	chunkChannelSize := 20
+
 	//variables to change
+	chunkString := ""
+	if useChunk {
+		chunkString = "chunked"
+	}
+	outfile := fmt.Sprintf("%s_filled%v%v", strings.TrimSuffix(filepath, ".tif"), adjType, chunkString)
+
 	err := error(nil)
 	if useChunk {
-		err = tools.ChunkFillMap(filepath, outfile, toleranceIsland, toleranceVoid, adjType, tools.MakePair(chunky, chunkx))
+		err = tools.ChunkFillMap(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType, chunkChannelSize)
 	} else {
 		err = tools.FullFillMap(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
 	}

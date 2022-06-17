@@ -52,13 +52,12 @@ func BigBlob(blob *Blob) bool {
 }
 
 func updateMapFromBlob(areaMap *[][]Square, blob *Blob, wet byte, finalized bool) {
-	for len(blob.Elements) > 0 {
+	for _, loc := range blob.Elements {
 		blob.NumFixed++
-		loc := blob.Elements[0]
-		blob.Elements = blob.Elements[1:]
 		setWet(areaMap, loc, wet)
 		setFinalized(areaMap, loc, finalized)
 	}
+	blob.Elements = nil
 }
 
 func searchedLoc(areaMap *[][]Square, loc OrderedPair) bool {
@@ -71,10 +70,15 @@ func inBounds(areaMap *[][]Square, loc OrderedPair) bool {
 }
 
 func growBlob(areaMap *[][]Square, blob *Blob, loc OrderedPair) {
-	blob.Elements = append(blob.Elements, loc)
-	if blob.NumFixed > 0 || len(blob.Elements) >= blob.ThresholdSize {
-		// fmt.Println("before update", blob.NumFixed)
-		updateMapFromBlob(areaMap, blob, blob.IsWater, true)
-		// fmt.Println("after update", blob.NumFixed)
+	if blob.NumFixed > 0 {
+		blob.NumFixed++
+		setWet(areaMap, loc, blob.IsWater)
+		setFinalized(areaMap, loc, true)
+	} else {
+		blob.Elements = append(blob.Elements, loc)
+		if len(blob.Elements) >= blob.ThresholdSize {
+			updateMapFromBlob(areaMap, blob, blob.IsWater, true)
+		}
 	}
+
 }
