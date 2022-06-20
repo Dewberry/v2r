@@ -5,9 +5,10 @@ import (
 	processing "app/tools/processing"
 	"fmt"
 	"math"
+	// bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64, adjType int, verbose bool) {
+func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64, adjType int, ICP innerChunkPartition, verbose bool) {
 	islands, voids := 0, 0
 	islandArea, voidArea := 0, 0
 
@@ -39,7 +40,7 @@ func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64
 
 		}
 	}
-	if verbose { //logging paul-bunyan
+	if verbose {
 		fmt.Printf("filled in %v islands covering %.2f sq footage\n", islands, float64(islandArea)*pixelArea)
 		fmt.Printf("filled in %v voids covering %.2f sq footage\n", voids, float64(voidArea)*pixelArea)
 	}
@@ -100,6 +101,9 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	areaSize := math.Abs(gdal.XCell * gdal.YCell)
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}
 
-	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, true)
-	return processing.WriteByteTif(flattenAreaMap(areaMap), gdal, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), outfile, true)
+	ICP := innerChunkPartition{0, len(areaMap), 0, len(areaMap[0])}
+	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP, true)
+	return processing.WriteTif(flattenAreaMap(areaMap), gdal, outfile, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), true)
+	// return processing.WriteByteTif(flattenAreaMap(areaMap), gdal, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), outfile, true)
+
 }

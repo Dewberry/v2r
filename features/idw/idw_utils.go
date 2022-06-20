@@ -48,6 +48,6 @@ func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-	processing.WriteFloatTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
+	processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
 
 }

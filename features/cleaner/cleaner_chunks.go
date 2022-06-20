@@ -3,6 +3,8 @@ package cleaner
 import (
 	"app/tools"
 	processing "app/tools/processing"
+	"fmt"
+
 	"log"
 	"math"
 )
@@ -28,12 +30,13 @@ func sliceAreaMap(areaMap *[][]square, ICP innerChunkPartition) {
 
 func cleanChunk(filepath string, tolerance map[byte]int, offset tools.OrderedPair, ICP innerChunkPartition,
 	size tools.OrderedPair, areaSize float64, adjType int, chunkChannel chan chunkFillStruct) {
+
 	areaMap, err := readFileChunk(filepath, tools.MakePair(offset.R-ICP.RStart, offset.C-ICP.CStart), size)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, false)
+	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP, false)
 	sliceAreaMap(&areaMap, ICP)
 
 	chunkChannel <- chunkFillStruct{areaMap, offset}
@@ -74,9 +77,10 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 
 	buffer := bufferSize(adjType, tolerance)
 	chunkChannel := make(chan chunkFillStruct, chanSize)
-	firstChunk := true
+	i := 0
 	for r := 0; r < rowsAndCols.R; r += chunkSize.R {
 		for c := 0; c < rowsAndCols.C; c += chunkSize.C {
+			fmt.Println(i)
 
 			innerChunk, size := makeChunk(buffer, chunkSize, rowsAndCols, r, c)
 
@@ -85,8 +89,8 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 			completedChunk := <-chunkChannel
 			bufferSize := tools.MakePair(len(completedChunk.AreaMap), len(completedChunk.AreaMap[0]))
 
-			processing.WriteByteTif(flattenAreaMap(completedChunk.AreaMap), gdal, completedChunk.Offset, rowsAndCols, bufferSize, outfile, firstChunk)
-			firstChunk = false
+			processing.WriteTif(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, i == 0)
+			i++
 		}
 	}
 
