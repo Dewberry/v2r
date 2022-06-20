@@ -101,5 +101,5 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}
 
 	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, true)
-	return processing.WriteTifSquare(flattenAreaMap(areaMap), gdal, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), outfile, true)
+	return processing.WriteByteTif(flattenAreaMap(areaMap), gdal, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), outfile, true)
 }

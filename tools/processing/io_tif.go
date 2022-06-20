@@ -23,7 +23,7 @@ func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GD
 	return GDalInfo{XMin, YMin, XCell, YCell, GDalDataType, EPSG}
 }
 
-func WriteFloat(unwrappedMatrix []float64, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
+func WriteFloatTif(unwrappedMatrix []float64, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	filename = fmt.Sprintf("%s.tiff", filename)
 
 	var dataset gdal.Dataset
@@ -49,7 +49,7 @@ func WriteFloat(unwrappedMatrix []float64, GDINFO GDalInfo, filename string, off
 		dataset.SetProjection(srString)
 
 	} else {
-		fmt.Println("Updating Raster")
+		// fmt.Println("Updating Raster")
 		var err error
 		dataset, err = gdal.Open(filename, gdal.Update)
 		if err != nil {
@@ -109,7 +109,7 @@ func ReadTif(filepath string, offsets tools.OrderedPair, size tools.OrderedPair,
 	return data, gdReturn, size, nil
 }
 
-func WriteTifSquare(unwrappedMatrix []byte, GDINFO GDalInfo, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, filename string, create bool) error {
+func WriteByteTif(unwrappedMatrix []byte, GDINFO GDalInfo, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, filename string, create bool) error {
 	filename = fmt.Sprintf("%s.tiff", filename)
 
 	var dataset gdal.Dataset
@@ -135,7 +135,7 @@ func WriteTifSquare(unwrappedMatrix []byte, GDINFO GDalInfo, offsets tools.Order
 		dataset.SetProjection(srString)
 
 	} else {
-		fmt.Println("Updating Raster")
+		// fmt.Println("Updating Raster")
 		var err error
 		dataset, err = gdal.Open(filename, gdal.Update)
 		if err != nil {

@@ -85,7 +85,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 			completedChunk := <-chunkChannel
 			bufferSize := tools.MakePair(len(completedChunk.AreaMap), len(completedChunk.AreaMap[0]))
 
-			processing.WriteTifSquare(flattenAreaMap(completedChunk.AreaMap), gdal, completedChunk.Offset, rowsAndCols, bufferSize, outfile, firstChunk)
+			processing.WriteByteTif(flattenAreaMap(completedChunk.AreaMap), gdal, completedChunk.Offset, rowsAndCols, bufferSize, outfile, firstChunk)
 			firstChunk = false
 		}
 	}
