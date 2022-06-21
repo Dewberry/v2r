@@ -51,3 +51,11 @@ func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 	processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
 
 }
+
+func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) {
+	grid := chunk.Data
+	start := chunk.Pair
+	bufferSize := tools.MakePair(len(grid), len(grid[0]))
+	processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
+
+}
