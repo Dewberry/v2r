@@ -3,7 +3,6 @@ package cleaner
 import (
 	"app/tools"
 	processing "app/tools/processing"
-	"fmt"
 
 	"log"
 	"math"
@@ -11,6 +10,7 @@ import (
 
 type chunkFillStruct struct {
 	AreaMap [][]square
+	cStats  cleanerStats
 	Offset  tools.OrderedPair
 }
 
@@ -36,10 +36,10 @@ func cleanChunk(filepath string, tolerance map[byte]int, offset tools.OrderedPai
 		log.Fatal(err)
 	}
 
-	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP, false)
+	cStats := cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP)
 	sliceAreaMap(&areaMap, ICP)
 
-	chunkChannel <- chunkFillStruct{areaMap, offset}
+	chunkChannel <- chunkFillStruct{areaMap, cStats, offset}
 }
 
 func bufferSize(adjType int, tolerance map[byte]int) tools.OrderedPair {
@@ -78,21 +78,29 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 	buffer := bufferSize(adjType, tolerance)
 	chunkChannel := make(chan chunkFillStruct, chanSize)
 	i := 0
+	cStats := cleanerStats{}
 	for r := 0; r < rowsAndCols.R; r += chunkSize.R {
 		for c := 0; c < rowsAndCols.C; c += chunkSize.C {
-			fmt.Println(i)
-
 			innerChunk, size := makeChunk(buffer, chunkSize, rowsAndCols, r, c)
 
 			cleanChunk(filepath, tolerance, tools.MakePair(r, c), innerChunk, size, areaSize, adjType, chunkChannel)
 
 			completedChunk := <-chunkChannel
 			bufferSize := tools.MakePair(len(completedChunk.AreaMap), len(completedChunk.AreaMap[0]))
+			cStats.updateStats(completedChunk.cStats)
 
-			processing.WriteTif(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, i == 0)
+			err = processing.WriteTif(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, i == 0)
+			if err != nil {
+				return err
+			}
+			// err = processing.WriteAscii(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, i == 0)
+			// if err != nil {
+			// 	return err
+			// }
 			i++
 		}
 	}
+	printStats(cStats, areaSize)
 
 	return nil
 }

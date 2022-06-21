@@ -15,6 +15,7 @@ type square struct {
 	IsWater   byte
 	Searched  bool
 	Finalized bool
+	IsChanged bool
 }
 
 //Helper methods for blob and square
@@ -36,6 +37,10 @@ func setFinalized(areaMap *[][]square, loc tools.OrderedPair, finalized bool) {
 
 func setWet(areaMap *[][]square, loc tools.OrderedPair, wet byte) {
 	(*areaMap)[loc.R][loc.C].IsWater = wet
+}
+
+func setChanged(areaMap *[][]square, loc tools.OrderedPair, changed bool) {
+	(*areaMap)[loc.R][loc.C].IsChanged = changed
 }
 
 func sameBlob(areaMap *[][]square, loc1 tools.OrderedPair, loc2 tools.OrderedPair) bool {
@@ -60,6 +65,7 @@ func updateMapFromBlob(areaMap *[][]square, b *blob, wet byte, finalized bool) {
 		b.NumFixed++
 		setWet(areaMap, loc, wet)
 		setFinalized(areaMap, loc, finalized)
+		setChanged(areaMap, loc, wet != b.IsWater)
 	}
 	b.Elements = nil
 }

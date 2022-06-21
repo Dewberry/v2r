@@ -3,7 +3,31 @@ package cleaner
 import (
 	"app/tools"
 	processing "app/tools/processing"
+	"fmt"
 )
+
+type cleanerStats struct {
+	Islands    int
+	Voids      int
+	IslandArea int
+	VoidArea   int
+}
+
+func printStats(c cleanerStats, pixelArea float64) {
+	fmt.Printf("filled in %v islands covering %.2f sq footage\n", c.Islands, float64(c.IslandArea)*pixelArea)
+	fmt.Printf("filled in %v voids covering %.2f sq footage\n", c.Voids, float64(c.VoidArea)*pixelArea)
+}
+
+func isInPartiion(ICP innerChunkPartition, loc tools.OrderedPair) bool {
+	return loc.R >= ICP.RStart && loc.R < ICP.REnd && loc.C >= ICP.CStart && loc.C < ICP.CEnd
+}
+
+func (toUpdate *cleanerStats) updateStats(cs cleanerStats) {
+	toUpdate.Islands += cs.Islands
+	toUpdate.Voids += cs.Voids
+	toUpdate.IslandArea += cs.IslandArea
+	toUpdate.VoidArea += cs.VoidArea
+}
 
 func createAreaMap(flattenedMap []byte, rowsAndCols tools.OrderedPair) [][]square {
 	areaMap := make([][]square, rowsAndCols.R)

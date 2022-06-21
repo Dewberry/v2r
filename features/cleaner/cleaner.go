@@ -3,21 +3,35 @@ package cleaner
 import (
 	"app/tools"
 	processing "app/tools/processing"
-	"fmt"
 	"math"
 	// bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64, adjType int, ICP innerChunkPartition, verbose bool) {
+func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64, adjType int, ICP innerChunkPartition) cleanerStats {
 	islands, voids := 0, 0
 	islandArea, voidArea := 0, 0
 
 	for r := 0; r < len(*areaMap); r++ {
 		for c := 0; c < len((*areaMap)[0]); c++ {
 			sq := getSquareRC(areaMap, r, c)
-			if sq.Searched || sq.IsWater == 255 {
+			if sq.IsWater == 255 {
 				continue
 			}
+			if sq.Searched {
+				if sq.IsChanged && isInPartiion(ICP, tools.MakePair(r, c)) {
+					switch sq.IsWater {
+					case byte(0): // from water to land
+						voidArea++
+						continue
+
+					case byte(1): //land to water
+						islandArea++
+						continue
+					}
+				}
+				continue
+			}
+
 			setSearched(areaMap, tools.MakePair(r, c), true)
 			blob, skip := searchBlob(areaMap, tools.MakePair(r, c), adjType, tolerance[getSquareRC(areaMap, r, c).IsWater], getSquareRC(areaMap, r, c).IsWater)
 			if skip {
@@ -28,22 +42,25 @@ func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64
 				switch blob.IsWater {
 				case byte(0): // update island to water
 					updateMapFromBlob(areaMap, &blob, 1, true)
-					islands++
-					islandArea += getNumElements(&blob)
+					if isInPartiion(ICP, tools.MakePair(r, c)) {
+						islands++
+						islandArea++
+					}
+					// islandArea += getNumElements(&blob)
 
 				case byte(1): // update island to water
 					updateMapFromBlob(areaMap, &blob, 0, true)
-					voids++
-					voidArea += getNumElements(&blob)
+					if isInPartiion(ICP, tools.MakePair(r, c)) {
+						voids++
+						voidArea++
+					}
+					// voidArea += getNumElements(&blob)
 				}
 			}
 
 		}
 	}
-	if verbose {
-		fmt.Printf("filled in %v islands covering %.2f sq footage\n", islands, float64(islandArea)*pixelArea)
-		fmt.Printf("filled in %v voids covering %.2f sq footage\n", voids, float64(voidArea)*pixelArea)
-	}
+	return cleanerStats{islands, voids, islandArea, voidArea}
 }
 
 func searchBlob(areaMap *[][]square, loc tools.OrderedPair, adjType int, thresholdsize int, wet byte) (blob, bool) {
@@ -102,8 +119,9 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}
 
 	ICP := innerChunkPartition{0, len(areaMap), 0, len(areaMap[0])}
-	cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP, true)
+	summary := cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP)
+	printStats(summary, areaSize)
+
 	return processing.WriteTif(flattenAreaMap(areaMap), gdal, outfile, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), true)
-	// return processing.WriteByteTif(flattenAreaMap(areaMap), gdal, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), outfile, true)
 
 }
