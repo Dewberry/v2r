@@ -25,7 +25,15 @@ func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GD
 
 func WriteTif(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	filename = fmt.Sprintf("%s.tiff", filename)
+	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "GTIFF", offsets, totalSize, bufferSize, create)
+}
 
+func WriteAscii(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
+	filename = fmt.Sprintf("%s.asc", filename)
+	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "AAIGrid", offsets, totalSize, bufferSize, create)
+}
+
+func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, driver string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	var dataset gdal.Dataset
 	if create {
 		fmt.Println("Creating Raster")
@@ -49,7 +57,7 @@ func WriteTif(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, off
 		dataset.SetProjection(srString)
 
 	} else {
-		fmt.Println("Updating Raster")
+		// fmt.Println("Updating Raster")
 		var err error
 		dataset, err = gdal.Open(filename, gdal.Update)
 		if err != nil {

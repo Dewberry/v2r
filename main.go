@@ -12,8 +12,8 @@ import (
 )
 
 func main() {
-	doIdw := true
-	doClean := false
+	doIdw := false
+	doClean := true
 
 	if doIdw {
 		doIDW()
@@ -121,5 +121,5 @@ func doIDW() {
 	}
 
 	fmt.Printf("Completed %v iterations in %v\n", iterations, time.Since(start))
-	fmt.Printf("Outfiles: %vpow{x}.tiff\n", outfile)
+	fmt.Printf("Outfiles: %vpow{x}\n", outfile)
 }
