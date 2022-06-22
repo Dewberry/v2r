@@ -4,7 +4,6 @@ import (
 	"app/tools"
 	"bufio"
 	"errors"
-	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -65,7 +64,7 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 					}
 				}
 			}
-			fmt.Println("reading in", "X:", xInfo, "\ty:", yInfo)
+			// fmt.Println("reading in", "X:", xInfo, "\ty:", yInfo)
 			return data, xInfo, yInfo, nil
 
 		}
@@ -89,7 +88,7 @@ func addPoints(sc *bufio.Scanner) []tools.Point {
 		p.Y, _ = strconv.ParseFloat(fields[1], 64)
 		p.Weight, _ = strconv.ParseFloat(fields[2], 64)
 
-		fmt.Println(p)
+		// fmt.Println(p)
 
 		data = append(data, p)
 

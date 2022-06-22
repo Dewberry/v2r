@@ -6,14 +6,16 @@ import (
 	"fmt"
 	_ "net/http/pprof"
 	"time"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
 func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, pow float64, useChunking bool, chunkR int, chunkC int, epsg int, channel chan string) error {
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
-	fmt.Printf("XINFO: %v\nYINFO: %v\n", xInfo, yInfo)
-	fmt.Printf("[%v X %v]\n", numRows, numCols)
+	bunyan.Debugf("XINFO: %v\nYINFO: %v\n", xInfo, yInfo)
+	bunyan.Debugf("[%v X %v]\n", numRows, numCols)
 
 	if !useChunking {
 		chunkR = numRows
@@ -34,7 +36,7 @@ func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 		// }
 
 	}
-	fmt.Printf("chunk sizes: [%v, %v]\ttotal chunks: %v\n", chunkR, chunkC, totalChunks)
+	bunyan.Infof("chunk sizes: [%v, %v]\ttotal chunks: %v\n", chunkR, chunkC, totalChunks)
 
 	// updateChannel := make(chan bool, 100)
 	// for i := 0; i < totalChunks; i++ {

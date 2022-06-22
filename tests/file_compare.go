@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/udhos/equalfile"
@@ -13,8 +12,6 @@ func sameFiles(f1, f2 string) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(f1, f2, equal)
 
 	return equal
 }
