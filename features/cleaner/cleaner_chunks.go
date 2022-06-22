@@ -3,6 +3,7 @@ package cleaner
 import (
 	"app/tools"
 	processing "app/tools/processing"
+	"fmt"
 
 	"log"
 	"math"
@@ -79,8 +80,13 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 	chunkChannel := make(chan chunkFillStruct, chanSize)
 	i := 0
 	cStats := cleanerStats{}
+	totalChunks := rowsAndCols.R / chunkSize.R * rowsAndCols.C / chunkSize.C
+	fmt.Printf("total chunks: %v\n", totalChunks)
 	for r := 0; r < rowsAndCols.R; r += chunkSize.R {
 		for c := 0; c < rowsAndCols.C; c += chunkSize.C {
+			if i%50 == 0 {
+				fmt.Printf("chunk %v / %v\n", i, totalChunks)
+			}
 			innerChunk, size := makeChunk(buffer, chunkSize, rowsAndCols, r, c)
 
 			cleanChunk(filepath, tolerance, tools.MakePair(r, c), innerChunk, size, areaSize, adjType, chunkChannel)
