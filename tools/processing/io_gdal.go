@@ -55,6 +55,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 			return err
 		}
 		dataset.SetProjection(srString)
+		dataset.SetGeoTransform([6]float64{GDINFO.XMin, GDINFO.XCell, 0, GDINFO.YMin, 0, GDINFO.YCell})
 
 	} else {
 		// fmt.Println("Updating Raster")
@@ -68,8 +69,6 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 		defer dataset.Close()
 
 	}
-
-	dataset.SetGeoTransform([6]float64{GDINFO.XMin, GDINFO.XCell, 0, GDINFO.YMin, 0, GDINFO.YCell})
 
 	raster := dataset.RasterBand(1)
 	return raster.IO(gdal.Write, offsets.C, offsets.R, bufferSize.C, bufferSize.R, unwrappedMatrix, bufferSize.C, bufferSize.R, 0, 0)
@@ -139,6 +138,12 @@ func TransferType(src, dst string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	gdal.Translate(dst, DS, []string{"-of float64"})
+
+	// datatype := gdal.Int16
+	_, err = gdal.Translate(dst, DS, []string{"-ot", "Int16"})
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// gdal.GDALTranslateOptions()
 }
