@@ -25,25 +25,25 @@ func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GD
 
 func WriteTif(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	filename = fmt.Sprintf("%s.tiff", filename)
-	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "GTIFF", offsets, totalSize, bufferSize, create)
+	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "GTiff", offsets, totalSize, bufferSize, create)
 }
 
 func WriteAscii(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	filename = fmt.Sprintf("%s.asc", filename)
-	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "AAIGrid", offsets, totalSize, bufferSize, create)
+	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "ASCIIGRID", offsets, totalSize, bufferSize, create)
 }
 
 func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, driver string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	var dataset gdal.Dataset
 	if create {
-		fmt.Println("Creating Raster")
-		driver, err := gdal.GetDriverByName("GTIFF")
+		// fmt.Println("Creating Raster")
+		driver, err := gdal.GetDriverByName(driver)
 		if err != nil {
 			log.Fatal(err)
 			return err
 		}
 		// fmt.Printf("Creating dataset\n")
-		dataset = driver.Create(filename, totalSize.C, totalSize.R, 1, GDINFO.GDalDataType, nil)
+		dataset = driver.Create(filename, totalSize.C, totalSize.R, 1, GDINFO.GDalDataType, []string{"BIGTIFF=YES"})
 
 		defer dataset.Close()
 
@@ -132,4 +132,13 @@ func GetTifInfo(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), getEPSG(info)}
 
 	return gdReturn, tools.MakePair(numRows, numCols), nil
+}
+
+func TransferType(src, dst string) {
+	DS, err := gdal.Open(src, gdal.ReadOnly)
+	if err != nil {
+		log.Fatal(err)
+	}
+	gdal.Translate(dst, DS, []string{"-of float64"})
+	// gdal.GDALTranslateOptions()
 }

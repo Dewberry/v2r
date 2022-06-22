@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools.Info, cell float64, pow float64, chunkR int, chunkC int) error {
+func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools.Info, pow float64, chunkR int, chunkC int) error {
 	filename := fmt.Sprintf("%s.asc", filepath)
 
 	f, err := os.Create(filename)
@@ -23,7 +23,7 @@ func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools
 		fmt.Sprintf("\nnrows\t%v", numRows),
 		fmt.Sprintf("\nyllcorner\t%.1f", yInfo.Min),
 		fmt.Sprintf("\nxllcorner\t%.1f", xInfo.Min),
-		fmt.Sprintf("\ncellsize\t%.1f", cell),
+		fmt.Sprintf("\ncellsize\t%.1f", xInfo.Step), // assumed square
 		"\nNODATA_value\t-9999",
 	}
 
@@ -35,15 +35,15 @@ func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools
 	}
 
 	stringChannel := make(chan StringInt, numRows)
-	for r := numRows - 1; r >= 0; r-- {
+	for r := 0; r < numRows; r++ { // without geotransform, do r = numRows - 1; r >= 0; r-- for the three loops
 		go makeString(grid, r, xInfo, yInfo, stringChannel)
 	}
 	rows := make([]string, numRows)
-	for r := numRows - 1; r >= 0; r-- {
+	for r := 0; r < numRows; r++ {
 		stringInt := <-stringChannel
 		rows[stringInt.Row] = stringInt.PrintString
 	}
-	for r := numRows - 1; r >= 0; r-- {
+	for r := 0; r < numRows; r++ {
 		writer.WriteString(rows[r])
 		writer.Flush()
 	}
