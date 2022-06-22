@@ -9,7 +9,7 @@ services:
       - v2r-net
     volumes:
       - ./:/app
-    # entrypoint: CompileDaemon --build="go build main.go" --command="./main"
+    entrypoint: /root/go/bin/CompileDaemon --build="go build main.go" --command="./main -f data/cleaner/clipped_wet_dry.tif"
 
   postgres:
     image: kartoza/postgis:14-3.2
