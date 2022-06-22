@@ -27,10 +27,11 @@ func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 	for i := 0; i < totalChunks; i++ {
 		chunk := <-chunkChannel
 		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
-		writeAsc(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
-		if !useChunking {
-			processing.PrintExcel(chunk.Data, outfile, pow)
-		}
+		// processing.PrintAscii(chunk.Data, fmt.Sprintf("%spow%.1f", outfile, pow), xInfo, yInfo, pow, chunkR, chunkC)
+		// writeAsc(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
+		// if !useChunking {
+		// 	processing.PrintExcel(chunk.Data, outfile, pow)
+		// }
 
 	}
 	fmt.Printf("chunk sizes: [%v, %v]\ttotal chunks: %v\n", chunkR, chunkC, totalChunks)

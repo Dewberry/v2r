@@ -3,6 +3,9 @@ package idw
 import (
 	"app/tools"
 	processing "app/tools/processing"
+	"fmt"
+	"log"
+	"os"
 )
 
 func calculateIDW(locs *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yInfo tools.Info, exp float64, r int, c int) tools.Point {
@@ -48,14 +51,25 @@ func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-	processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
-
+	err := processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
+	if err != nil {
+		log.Fatal("tif", err)
+	}
 }
 
 func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) {
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-	processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
 
+	emptyFile, err := os.Create(fmt.Sprintf("%s.asc", filename))
+	if err != nil {
+		log.Fatal("asc", err)
+	}
+	emptyFile.Close()
+
+	err = processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, false)
+	if err != nil {
+		log.Fatal("asc", err)
+	}
 }
