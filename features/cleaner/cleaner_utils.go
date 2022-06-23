@@ -84,7 +84,7 @@ func readFile(filepath string) ([][]square, processing.GDalInfo, error) {
 }
 
 func getChannelSize(chunkSize int) int {
-	var overhead uint64 = 100000000                 // 100MB overestimate
-	var subprocess uint64 = uint64(chunkSize * 200) // 4-8 bytes per int + actual bytes, 4 stored; overhead per subprocess estimate
-	return tools.ChannelSize(subprocess, overhead)
+	var overhead uint64 = 1000000000                // 1GB overestimate
+	var subprocess uint64 = uint64(chunkSize * 100) // 4-8 bytes per int + actual bytes, 4 stored; overhead per subprocess estimate
+	return tools.Min(100, tools.ChannelSize(subprocess, overhead))
 }

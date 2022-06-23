@@ -23,7 +23,7 @@ func main() {
 	var runTests bool
 	var runDebug bool
 	var runError bool
-	flag.StringVar(&path, "f", "", "pathtotif")
+	flag.StringVar(&path, "f", "data/cleaner/clipped_wet_dry.tif", "pathtotif")
 	flag.BoolVar(&runIDW, "i", false, "run the idw?")
 	flag.BoolVar(&runClean, "c", false, "run the cleaner?")
 	flag.BoolVar(&runTests, "t", false, "run the tests?")
@@ -40,15 +40,18 @@ func main() {
 		logger := bunyan.New()
 		logger.SetLevel(bunyan.INFO)
 	}
-	bunyan.Info("path: ", path)
+	// bunyan.Info("path: ", path)
 
 	if runIDW {
+		bunyan.Info("IDW started")
 		doIDW()
 	}
 	if runClean {
+		bunyan.Info("Cleaner started")
 		clean(path)
 	}
 	if runTests {
+		bunyan.Info("Test suite started")
 		tests.TestSuite()
 	}
 	fmt.Println("program ended")
@@ -98,17 +101,16 @@ func doIDW() {
 	start := time.Now()
 
 	//variables to change
-	useChunking := false
-	chunkR := 200
-	chunkC := 250
+	useChunking := true
+	chunkR := 200 * 10
+	chunkC := 200 * 10
 	powStep := .5
 	powStart := 1.7 // inclusive
 	powStop := 1.7  // inclusive
-	stepX := 100.0
-	stepY := 100.0
+	stepX := 10.0
+	stepY := 10.0
 	epsg := 2284
-	// inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
-	outfileFolder := "data/small/"
+	outfileFolder := "data/idw/"
 	//variables to change
 
 	srs := gdal.CreateSpatialReference("")
@@ -127,25 +129,25 @@ func doIDW() {
 	}
 
 	// From txt file
-	inputFile := "data/small/idw_in.txt"
-	listPoints, xInfo, yInfo, err := processing.ReadData(inputFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	// From txt file
-
-	//From db
-	// db := processing.DBInit()
-
-	// err := processing.PingWithTimeout(db)
-	// if err != nil {
-	// 	fmt.Println("Connected to database?", err)
-	// }
-
-	// listPoints, xInfo, yInfo, err := processing.ReadPGData(db, inputQuery, stepX, stepY)
+	// inputFile := "data/small/idw_in.txt"
+	// listPoints, xInfo, yInfo, err := processing.ReadData(inputFile)
 	// if err != nil {
 	// 	log.Fatal(err)
 	// }
+	// From txt file
+
+	//From db
+	db := processing.DBInit()
+	inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
+	err = processing.PingWithTimeout(db)
+	if err != nil {
+		fmt.Println("Connected to database?", err)
+	}
+
+	listPoints, xInfo, yInfo, err := processing.ReadPGData(db, inputQuery, stepX, stepY)
+	if err != nil {
+		log.Fatal(err)
+	}
 	//From db
 
 	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
@@ -154,7 +156,11 @@ func doIDW() {
 	channel := make(chan string, iterations)
 
 	for pow := powStart; pow <= powStop; pow += powStep {
-		go idw.MainSolve(&data, outfile, xInfo, yInfo, pow, useChunking, chunkR, chunkC, proj, channel)
+		if !useChunking {
+			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, pow, channel)
+		} else {
+			go idw.ChunkSolve(&data, outfile, xInfo, yInfo, chunkR, chunkC, proj, pow, channel)
+		}
 	}
 
 	for pow := powStart; pow <= powStop; pow += powStep {
@@ -162,6 +168,6 @@ func doIDW() {
 		fmt.Println(receivedString)
 	}
 
-	fmt.Printf("Completed %v iterations in %v\n", iterations, time.Since(start))
-	fmt.Printf("Outfiles: %vpow{x}\n", outfile)
+	bunyan.Info("Completed %v iterations in %v\n", iterations, time.Since(start))
+	bunyan.Info("Outfiles: %vpow{x}\n", outfile)
 }

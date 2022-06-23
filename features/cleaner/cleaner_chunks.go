@@ -43,7 +43,6 @@ func sliceAreaMap(areaMap *[][]square, ICP innerChunkPartition) {
 }
 
 func cleanChunk(jobs chan chunkJob, chunkChannel chan chunkFillStruct) {
-	// filepath string, tolerance map[byte]int, offset tools.OrderedPair, ICP innerChunkPartition, size tools.OrderedPair, areaSize float64, adjType int,
 	for j := range jobs {
 		areaMap, err := readFileChunk(j.Filepath, tools.MakePair(j.Offset.R-j.ICP.RStart, j.Offset.C-j.ICP.CStart), j.Size)
 		if err != nil {
@@ -84,7 +83,7 @@ func makeChunk(buffer tools.OrderedPair, chunkSize tools.OrderedPair, rowsAndCol
 
 func CleanWithChunking(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, chunkSize tools.OrderedPair, adjType int) error {
 	gdal, rowsAndCols, err := processing.GetInfoGDAL(filepath)
-	bunyan.Info(rowsAndCols)
+	bunyan.Info("img rows x cols: %v", rowsAndCols)
 	if err != nil {
 		return err
 	}
@@ -98,7 +97,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 	totalChunks := int((1+rowsAndCols.R)/chunkSize.R) * int((1+rowsAndCols.C)/chunkSize.C)
 
 	if totalChunks == 0 {
-		bunyan.Fatal("chunk size too large, total chunks = 0")
+		bunyan.Fatal("chunk size, %v too large for total image %v, total chunks = 0", chunkSize, rowsAndCols)
 	}
 
 	chunkChannel := make(chan chunkFillStruct, totalChunks)
@@ -134,9 +133,9 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 			return err
 		}
 		if (j+1)%progress == 0 {
-			bunyan.Infof("~%d%%, %v / %v", 10*(j+1)/progress, j+1, totalChunks)
+			bunyan.Infof("~%d%%, %v / %v", 100*(j+1)/totalChunks, j+1, totalChunks)
 		} else {
-			bunyan.Debugf("%v / %v     wait time: % v      print time: %v", j, totalChunks, received.Sub(start), time.Since(received))
+			bunyan.Debugf("%v / %v     wait time: % v      print time: %v", j+1, totalChunks, received.Sub(start), time.Since(received))
 			totalWait += received.Sub(start)
 			totalPrint += time.Since(received)
 		}
