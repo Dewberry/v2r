@@ -4,13 +4,12 @@ import (
 	"app/tools"
 	processing "app/tools/processing"
 	"fmt"
-	_ "net/http/pprof"
 	"time"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, pow float64, useChunking bool, chunkR int, chunkC int, epsg int, channel chan string) error {
+func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, pow float64, useChunking bool, chunkR int, chunkC int, proj string, channel chan string) error {
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
@@ -25,7 +24,7 @@ func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 	totalChunks := chunkSolve(data, xInfo, yInfo, pow, chunkR, chunkC, chunkChannel)
 
 	totalSize := tools.RCToPair(numRows, numCols)
-	gdal := processing.CreateGDalInfo(xInfo.Min, yInfo.Min, xInfo.Step, yInfo.Step, 7, epsg)
+	gdal := processing.CreateGDalInfo(xInfo.Min, yInfo.Min, xInfo.Step, yInfo.Step, 7, proj)
 	for i := 0; i < totalChunks; i++ {
 		chunk := <-chunkChannel
 		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)

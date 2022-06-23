@@ -2,7 +2,6 @@ package idw
 
 import (
 	"app/tools"
-	_ "net/http/pprof"
 )
 
 type chunkIDW struct {
