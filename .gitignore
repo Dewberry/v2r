@@ -17,3 +17,9 @@ data/
 main
 .vscode/
 pg-data/
+tests/*.tiff
+tests/*.asc
+tests/*.xml
+tests/*.prj
+tests/*.txt
+logs
