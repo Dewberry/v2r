@@ -6,45 +6,79 @@ import (
 	processing "app/tools/processing"
 	"fmt"
 	"log"
+	"os"
+	"strings"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
+	"github.com/dewberry/gdal"
 )
 
 func testIDW() {
+	fmt.Printf("____________________________\nIDW\n")
 	chunkR := 3
 	chunkC := 2
-	pow := 1.7
-	stepX := 3.0
-	stepY := 2.0
+	pow := 1.7 // don't change
 	epsg := 2284
-	outfileFolder := "tests/"
 
-	// From txt file
-	inputFile := "tests/idw_in.txt"
-	listPoints, xInfo, yInfo, err := processing.ReadData(inputFile)
+	srs := gdal.CreateSpatialReference("")
+	err := srs.FromEPSG(epsg)
 	if err != nil {
 		log.Fatal(err)
 	}
-	// From txt file
-
-	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
-	outfileFull := fmt.Sprintf("%sstep%.0f-%.0f", outfileFolder, stepX, stepY) // "step{x}-{y}[chunked]pow{pow}.[ext]"
-	// outfileChunk := fmt.Sprintf("%schunked", outfileFull)
-	channel := make(chan string, 2)
-
-	go idw.MainSolve(&data, outfileFull, xInfo, yInfo, pow, false, chunkR, chunkC, epsg, channel)
-	// go idw.MainSolve(&data, outfileChunk, xInfo, yInfo, pow, true, chunkR, chunkC, epsg, channel)
-
-	for i := 0; i < 1; i++ {
-		receivedString := <-channel
-		fmt.Println(receivedString)
+	proj, err := srs.ToWKT()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	completeOutfileTif := fmt.Sprintf("%spow1.7.tiff", outfileFull)
-	completeOutfileAsc := fmt.Sprintf("%spow1.7.asc", outfileFull)
-	fmt.Println("pre transfer")
-	processing.TransferType(completeOutfileTif, completeOutfileAsc)
-	// completeOutfileChunked := fmt.Sprintf("%spow1.7.tiff", outfileChunk)
-	correct := "idw_correct.asc"
-	fmt.Printf("File output correct\n____________________________\n")
-	fmt.Printf("NO CHUNKING: %v\n", sameFiles(completeOutfileAsc, correct))
-	// fmt.Printf("CHUNKING: %v\n", sameFiles(completeOutfileChunked, correctChunked))
+	filepath := "tests/idw_files/idw_in.txt"
+	listPoints, xInfo, yInfo, err := processing.ReadData(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
+
+	for _, stepxy := range [2][2]float64{{1.0, 1.0}, {2.0, 2.0}} {
+		xInfo.Step = stepxy[0]
+		yInfo.Step = stepxy[1]
+
+		outfileFull := fmt.Sprintf("tests/idw_files/idw_step%.0f-%.0f", xInfo.Step, yInfo.Step) // "step{x}-{y}[chunked]pow{pow}.[ext]"
+		outfileChunk := fmt.Sprintf("%schunked", outfileFull)
+		channel := make(chan string, 2)
+
+		go idw.MainSolve(&data, outfileFull, xInfo, yInfo, pow, false, chunkR, chunkC, proj, channel)
+		go idw.MainSolve(&data, outfileChunk, xInfo, yInfo, pow, true, chunkR, chunkC, proj, channel)
+
+		for i := 0; i < 2; i++ {
+			<-channel
+		}
+
+		completeOutfileTif := fmt.Sprintf("%spow1.7.tiff", outfileFull)
+		completeOutfileAsc := fmt.Sprintf("%spow1.7.asc", outfileFull)
+		processing.TransferType(completeOutfileTif, completeOutfileAsc, "Int16")
+
+		completeOutfileChunkedTif := fmt.Sprintf("%spow1.7.tiff", outfileChunk)
+		completeOutfileChunkedAsc := fmt.Sprintf("%spow1.7.asc", outfileChunk)
+		processing.TransferType(completeOutfileChunkedTif, completeOutfileChunkedAsc, "Int16")
+
+		correct := fmt.Sprintf("tests/idw_files/idw_correct_step%.0f-%.0f.asc", xInfo.Step, yInfo.Step)
+		fmt.Printf("\tNO CHUNKING: %s\t\t\t%v\n", completeOutfileAsc, sameFiles(completeOutfileAsc, correct))
+		fmt.Printf("\tCHUNKING: %s\t\t\t%v\n", completeOutfileChunkedAsc, sameFiles(completeOutfileChunkedAsc, correct))
+
+		if !sameFiles(completeOutfileAsc, correct) {
+			bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", completeOutfileAsc, correct)
+		}
+		if !sameFiles(completeOutfileChunkedAsc, correct) {
+			bunyan.Errorf("FILE: %s\tincorrect\t| Correct: %s", completeOutfileChunkedAsc, correct)
+		}
+
+		completeOutfile := completeOutfileTif[:strings.LastIndex(completeOutfileTif, ".tiff")]
+		completeOutfileChunked := completeOutfileChunkedTif[:strings.LastIndex(completeOutfileChunkedTif, ".tiff")]
+		for _, fp := range [2]string{completeOutfile, completeOutfileChunked} {
+			for _, ext := range [3]string{".asc.aux.xml", ".prj", ".tiff"} {
+				os.Remove(fp + ext)
+			}
+		}
+	}
+	fmt.Printf("____________________________\n")
 }
