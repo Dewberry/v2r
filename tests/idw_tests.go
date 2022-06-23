@@ -46,8 +46,8 @@ func testIDW() {
 		outfileChunk := fmt.Sprintf("%schunked", outfileFull)
 		channel := make(chan string, 2)
 
-		go idw.MainSolve(&data, outfileFull, xInfo, yInfo, pow, false, chunkR, chunkC, proj, channel)
-		go idw.MainSolve(&data, outfileChunk, xInfo, yInfo, pow, true, chunkR, chunkC, proj, channel)
+		go idw.FullSolve(&data, outfileFull, xInfo, yInfo, proj, pow, channel)
+		go idw.ChunkSolve(&data, outfileChunk, xInfo, yInfo, chunkR, chunkC, proj, pow, channel)
 
 		for i := 0; i < 2; i++ {
 			<-channel

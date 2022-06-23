@@ -9,52 +9,30 @@ import (
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func MainSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, pow float64, useChunking bool, chunkR int, chunkC int, proj string, channel chan string) error {
+func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, proj string, pow float64, channel chan string) error {
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
 	bunyan.Debugf("XINFO: %v\nYINFO: %v\n", xInfo, yInfo)
 	bunyan.Debugf("[%v X %v]\n", numRows, numCols)
 
-	if !useChunking {
-		chunkR = numRows
-		chunkC = numCols
-	}
-	chunkChannel := make(chan chunkIDW, 1000)
-	totalChunks := chunkSolve(data, xInfo, yInfo, pow, chunkR, chunkC, chunkChannel)
-
 	totalSize := tools.RCToPair(numRows, numCols)
 	gdal := processing.CreateGDalInfo(xInfo.Min, yInfo.Min, xInfo.Step, yInfo.Step, 7, proj)
-	for i := 0; i < totalChunks; i++ {
-		chunk := <-chunkChannel
-		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
-		// processing.PrintAscii(chunk.Data, fmt.Sprintf("%spow%.1f", outfile, pow), xInfo, yInfo, pow, chunkR, chunkC)
-		// writeAsc(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
-		// if !useChunking {
-		// 	processing.PrintExcel(chunk.Data, outfile, pow)
-		// }
 
+	grid := make([][]float64, totalSize.R)
+	for r := 0; r < totalSize.R; r++ {
+		grid[r] = make([]float64, totalSize.C)
+		for c := 0; c < totalSize.C; c++ {
+			grid[r][c] = calculateIDW(data, xInfo, yInfo, pow, r, c).Weight
+			// calculateIDW(locs, xInfo, yInfo, &grid[r-rStart][c-cStart], exp, r, c)
+		}
 	}
-	bunyan.Infof("chunk sizes: [%v, %v]\ttotal chunks: %v\n", chunkR, chunkC, totalChunks)
+	toPrint := chunkIDW{tools.MakePair(0, 0), grid}
+	outfile = fmt.Sprintf("%spow%.1f", outfile, pow)
+	writeTif(toPrint, outfile, gdal, totalSize, 0)
+	// processing.TransferType(outfile+".tiff", outfile+".asc", "Int32") // for ascii output
+	// processing.PrintExcel(grid, outfile, pow)
 
-	// updateChannel := make(chan bool, 100)
-	// for i := 0; i < totalChunks; i++ {
-	// 	gridChunk := <-chunkChannel
-	// 	go chunkUpdate(&grid, &gridChunk, updateChannel)
-	// }
-
-	// for i := 0; i < totalChunks; i++ {
-	// 	<-updateChannel
-	// }
-
-	// if !useChunking {
-	// 	// innerErr := PrintExcel(gridChunk, fmt.Sprintf("%spow%.1f", outfile, pow), pow)
-	// 	// innerErr := PrintAscii(gridChunk, fmt.Sprintf("%spow%.1f", outfile, pow), pow, xInfo.Step, yInfo.Step)
-
-	// 	if innerErr != nil {
-	// 		return innerErr
-	// 	}
-	// }
 	channel <- fmt.Sprintf("pow%v [%vX%v] completed in %v", pow, numRows, numCols, time.Since(start))
 	return nil
 }

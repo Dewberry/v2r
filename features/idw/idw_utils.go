@@ -73,3 +73,9 @@ func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 		log.Fatal("asc", err)
 	}
 }
+
+func getChannelSize(chunkSize int) int {
+	var overhead uint64 = 10000000                  // 100 MB overestimate
+	var subprocess uint64 = uint64(chunkSize * 150) // 4-8 bytes per int + actual bytes, 4 stored; overhead per subprocess estimate
+	return tools.ChannelSize(subprocess, overhead)
+}

@@ -186,7 +186,7 @@ func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
 	bunyan.Info("using 70%% of free memory")
 	bunyan.Infof("allocated %v", calculated)
 
-	return Min(100, Max(1, calculated))
+	return Max(1, calculated)
 }
 
 func ChangeExtension(filename string, ext string) string {
