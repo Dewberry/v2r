@@ -11,26 +11,47 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
+	"github.com/dewberry/gdal"
 )
 
 func main() {
 	var path string
+	var runIDW bool
+	var runClean bool
+	var runTests bool
+	var runDebug bool
+	var runError bool
 	flag.StringVar(&path, "f", "", "pathtotif")
+	flag.BoolVar(&runIDW, "i", false, "run the idw?")
+	flag.BoolVar(&runClean, "c", false, "run the cleaner?")
+	flag.BoolVar(&runTests, "t", false, "run the tests?")
+	flag.BoolVar(&runDebug, "d", false, "run the tests?")
+	flag.BoolVar(&runError, "e", false, "run the tests?")
 	flag.Parse()
 
-	doIdw := false
-	doClean := false
-	doTests := false
-	fmt.Println("hello", path)
-	if doIdw {
+	if runError {
+		logger := bunyan.New()
+		logger.SetLevel(bunyan.ERROR)
+	} else if runDebug {
+		tools.SetLogging(bunyan.DEBUG)
+	} else {
+		logger := bunyan.New()
+		logger.SetLevel(bunyan.INFO)
+	}
+	bunyan.Info("path: ", path)
+
+	if runIDW {
 		doIDW()
 	}
-	if doClean {
+	if runClean {
 		clean(path)
 	}
-	if doTests {
+	if runTests {
 		tests.TestSuite()
 	}
+	fmt.Println("program ended")
 }
 
 func clean(filepath string) {
@@ -45,9 +66,10 @@ func clean(filepath string) {
 	toleranceIsland := 40000.0 // test smaller datasets
 	toleranceVoid := 22500.0   // test smaller datasets
 	useChunk := true
-	chunkx := 256 * 5
-	chunky := 256 * 5
-	chunkChannelSize := 20
+	chunkx := 256 * 10
+	chunky := 256 * 10
+	// chunkx := 100
+	// chunky := 100
 	//variables to change
 
 	chunkString := ""
@@ -58,7 +80,7 @@ func clean(filepath string) {
 
 	err := error(nil)
 	if useChunk {
-		err = cleaner.CleanWithChunking(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType, chunkChannelSize)
+		err = cleaner.CleanWithChunking(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
 	} else {
 		err = cleaner.CleanFull(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
 	}
@@ -88,6 +110,16 @@ func doIDW() {
 	// inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
 	outfileFolder := "data/small/"
 	//variables to change
+
+	srs := gdal.CreateSpatialReference("")
+	err := srs.FromEPSG(epsg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	proj, err := srs.ToWKT()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	chunkString := ""
 	if useChunking {
@@ -122,7 +154,7 @@ func doIDW() {
 	channel := make(chan string, iterations)
 
 	for pow := powStart; pow <= powStop; pow += powStep {
-		go idw.MainSolve(&data, outfile, xInfo, yInfo, pow, useChunking, chunkR, chunkC, epsg, channel)
+		go idw.MainSolve(&data, outfile, xInfo, yInfo, pow, useChunking, chunkR, chunkC, proj, channel)
 	}
 
 	for pow := powStart; pow <= powStop; pow += powStep {
