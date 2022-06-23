@@ -4,6 +4,8 @@ import (
 	"app/tools"
 	processing "app/tools/processing"
 	"math"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
 	// bunyan "github.com/Dewberry/paul-bunyan"
 )
 
@@ -112,6 +114,8 @@ func getSimilarSurrounding(areaMap *[][]square, loc tools.OrderedPair, adjType i
 
 func CleanFull(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, adjType int) error {
 	areaMap, gdal, err := readFile(filepath)
+	bunyan.Infof("[%v, %v]", len(areaMap), len(areaMap[0]))
+
 	if err != nil {
 		return err
 	}
@@ -121,7 +125,6 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	ICP := innerChunkPartition{0, len(areaMap), 0, len(areaMap[0])}
 	summary := cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP)
 	printStats(summary, areaSize)
-
 	return processing.WriteTif(flattenAreaMap(areaMap), gdal, outfile, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), true)
 
 }

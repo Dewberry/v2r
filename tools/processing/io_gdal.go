@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/dewberry/gdal"
 )
 
@@ -16,11 +17,11 @@ type GDalInfo struct {
 	XCell        float64
 	YCell        float64
 	GDalDataType gdal.DataType
-	EPSG         int
+	Proj         string
 }
 
-func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GDalDataType gdal.DataType, EPSG int) GDalInfo {
-	return GDalInfo{XMin, YMin, XCell, YCell, GDalDataType, EPSG}
+func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GDalDataType gdal.DataType, proj string) GDalInfo {
+	return GDalInfo{XMin, YMin, XCell, YCell, GDalDataType, proj}
 }
 
 func WriteTif(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
@@ -47,14 +48,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 
 		defer dataset.Close()
 
-		spatialRef := gdal.CreateSpatialReference("")
-		spatialRef.FromEPSG(GDINFO.EPSG)
-		srString, err := spatialRef.ToWKT()
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
-		dataset.SetProjection(srString)
+		dataset.SetProjection(GDINFO.Proj)
 		dataset.SetGeoTransform([6]float64{GDINFO.XMin, GDINFO.XCell, 0, GDINFO.YMin, 0, GDINFO.YCell})
 
 	} else {
@@ -77,13 +71,15 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 func getEPSG(s string) int {
 	loc := strings.LastIndex(s, "ID[\"EPSG\",") + 10
 	if loc == -1 {
-		return -1
+		bunyan.Info("invalid or no epsg given, 2284 used instead")
+		return 2284
 	}
 	epsg5, err := strconv.Atoi(s[loc : loc+5])
 	if err != nil {
 		epsg4, err := strconv.Atoi(s[loc : loc+4])
 		if err != nil {
-			return -2
+			bunyan.Info("invalid or no epsg given, 2284 used instead")
+			return 2284
 		}
 		return epsg4
 	}
@@ -91,7 +87,7 @@ func getEPSG(s string) int {
 
 }
 
-func ReadTif(filepath string, offsets tools.OrderedPair, size tools.OrderedPair, entireFile bool) ([]byte, GDalInfo, tools.OrderedPair, error) {
+func ReadGDAL(filepath string, offsets tools.OrderedPair, size tools.OrderedPair, entireFile bool) ([]byte, GDalInfo, tools.OrderedPair, error) {
 	DS, err := gdal.Open(filepath, gdal.ReadOnly)
 	if err != nil {
 		return []byte{}, GDalInfo{}, tools.OrderedPair{}, err
@@ -100,10 +96,9 @@ func ReadTif(filepath string, offsets tools.OrderedPair, size tools.OrderedPair,
 		size = tools.MakePair(DS.RasterYSize(), DS.RasterXSize())
 	}
 
-	info := gdal.Info(DS, nil)
 	inGT := DS.GeoTransform()
 
-	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), getEPSG(info)}
+	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), DS.Projection()}
 
 	band := DS.RasterBand(1)
 
@@ -116,7 +111,7 @@ func ReadTif(filepath string, offsets tools.OrderedPair, size tools.OrderedPair,
 	return data, gdReturn, size, nil
 }
 
-func GetTifInfo(filepath string) (GDalInfo, tools.OrderedPair, error) {
+func GetInfoGDAL(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	DS, err := gdal.Open(filepath, gdal.ReadOnly)
 	if err != nil {
 		return GDalInfo{}, tools.OrderedPair{}, err
@@ -125,22 +120,27 @@ func GetTifInfo(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	numCols := DS.RasterXSize()
 	numRows := DS.RasterYSize()
 
-	info := gdal.Info(DS, nil)
 	inGT := DS.GeoTransform()
-
-	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), getEPSG(info)}
+	// bunyan.Debug(info)
+	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), DS.Projection()}
 
 	return gdReturn, tools.MakePair(numRows, numCols), nil
 }
 
-func TransferType(src, dst string) {
+func TransferType(src string, dst string, outputType string) {
 	DS, err := gdal.Open(src, gdal.ReadOnly)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// datatype := gdal.Int16
-	_, err = gdal.Translate(dst, DS, []string{"-ot", "Int16"})
+	opts := []string{"-ot", outputType}
+	if strings.HasSuffix(dst, ".tiff") || strings.HasSuffix(dst, ".tif") {
+		opts = append(opts, "-of", "GTiff",
+			"-co", "TILED=YES",
+			"-co", "COPY_SRC_OVERVIEWS=YES")
+	}
+	_, err = gdal.Translate(dst, DS, opts)
 	if err != nil {
 		log.Fatal(err)
 	}

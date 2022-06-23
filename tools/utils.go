@@ -3,6 +3,13 @@ package tools
 import (
 	"fmt"
 	"math"
+	"strings"
+	"time"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
+	"github.com/labstack/gommon/log"
+	"github.com/natefinch/lumberjack"
+	"github.com/pbnjay/memory"
 )
 
 //Start Basic Utilites
@@ -166,3 +173,37 @@ func CalculateWeight(cell Point, data *[]Point, exp float64) float64 {
 }
 
 // End Math Functions
+
+//Memory Management
+func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
+	bunyan.Debugf("Total system memory: %d", memory.TotalMemory())
+	bunyan.Infof("Free memory: %d", memory.FreeMemory())
+
+	bunyan.Debugf("Appx Memory/subprocess: %d", appxSubprocess)
+	bunyan.Debugf("Appx Overhead: %v", appxOverhead)
+
+	calculated := int((memory.FreeMemory()-appxOverhead)/appxSubprocess) * 7 / 10
+	bunyan.Info("using 70%% of free memory")
+	bunyan.Infof("allocated %v", calculated)
+
+	return Min(100, Max(1, calculated))
+}
+
+func ChangeExtension(filename string, ext string) string {
+	period := strings.LastIndex(filename, ".")
+	return fmt.Sprintf("%s%s", filename[:period], ext)
+}
+
+func SetLogging(level log.Lvl) {
+	logger := bunyan.New()
+	logger.SetLevel(level)
+	date := time.Now().Format("2006-02-01_15:04:05") // YYYY-MM-DD
+	file := fmt.Sprintf("logs/%s.txt", date)
+	logger.SetOutput(&lumberjack.Logger{
+		Filename:   file,
+		MaxSize:    1, // megabytes
+		MaxBackups: 100,
+		MaxAge:     90,   //days
+		Compress:   true, // disabled by default
+	})
+}
