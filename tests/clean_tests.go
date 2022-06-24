@@ -24,7 +24,7 @@ func testCleaner() {
 
 	filepathTif := tools.ChangeExtension(filepath, ".tif")
 	processing.TransferType(filepath, filepathTif, "Byte")
-	fmt.Printf("____________________________\nCleaner\n")
+	bunyan.Infof("____________________________\nCleaner\n")
 	for _, adjType := range [2]int{4, 8} {
 
 		outfileFull := fmt.Sprintf("%s_isl%.0fvoid%.0f_cleaned%v", strings.TrimSuffix(filepath, ".asc"), toleranceIsland, toleranceVoid, adjType)
@@ -48,8 +48,8 @@ func testCleaner() {
 		processing.TransferType(outfileChunkTif, outfileChunkAsc, "Int16")
 
 		correct := fmt.Sprintf("tests/cleaner_files/clean_i%.0fv%.0fd%v_correct.asc", toleranceIsland, toleranceVoid, adjType)
-		fmt.Printf("\tNO CHUNKING: %s\t%v\n", outfileFullAsc, sameFiles(outfileFullAsc, correct))
-		fmt.Printf("\tCHUNKING: %s\t%v\n", outfileChunkAsc, sameFiles(outfileChunkAsc, correct))
+		bunyan.Infof("\tNO CHUNKING: %s\t%v\n", outfileFullAsc, sameFiles(outfileFullAsc, correct))
+		bunyan.Infof("\tCHUNKING: %s\t%v\n", outfileChunkAsc, sameFiles(outfileChunkAsc, correct))
 
 		if !sameFiles(outfileFullAsc, correct) {
 			bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", outfileFullAsc, correct)
@@ -68,5 +68,5 @@ func testCleaner() {
 	}
 	// Delete tif creation
 	os.Remove(filepathTif)
-	fmt.Printf("____________________________\n")
+	bunyan.Infof("____________________________\n")
 }

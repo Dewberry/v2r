@@ -60,7 +60,7 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	bunyan.Infof("RowsXCols: [%v X %v]\n", numRows, numCols)
 	bunyan.Infof("Chunk Dim: [%v X %v]\n", chunkR, chunkC)
 
-	totalChunks := int(1+numRows/chunkR) * int(1+numCols/chunkC)
+	totalChunks := tools.RoundUp(numRows, chunkR) * tools.RoundUp(numCols, chunkC)
 	chunkChannel := make(chan chunkIDW, totalChunks)
 	jobs := make(chan chunkJob, totalChunks)
 	bunyan.Infof("total chunks: %v\n", totalChunks)
@@ -70,9 +70,9 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	for i := 0; i < numWorkers; i++ {
 		go makeGridIDW(jobs, chunkChannel)
 	}
-
 	for r := 0; r < numRows; r += chunkR {
 		for c := 0; c < numCols; c += chunkC {
+			// fmt.Println(tools.RCToPair(r, c), tools.RCToPair(tools.Min(r+chunkR, numRows), tools.Min(c+chunkC, numCols)))
 			job := chunkJob{data, xInfo, yInfo, tools.RCToPair(r, c), tools.RCToPair(tools.Min(r+chunkR, numRows), tools.Min(c+chunkC, numCols)), pow}
 			jobs <- job
 		}
@@ -80,13 +80,14 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	close(jobs)
 	totalWait := time.Duration(0)
 	totalPrint := time.Duration(0)
-	progress := totalChunks / 10
+	progress := tools.Max(1, totalChunks/10)
 
 	totalSize := tools.RCToPair(numRows, numCols)
 	gdal := processing.CreateGDalInfo(xInfo.Min, yInfo.Min, xInfo.Step, yInfo.Step, 7, proj)
 	for i := 0; i < totalChunks; i++ {
 		start := time.Now()
 		chunk := <-chunkChannel
+		// fmt.Println(chunk)
 		received := time.Now()
 
 		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)

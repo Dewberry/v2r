@@ -141,6 +141,13 @@ func GetDimensions(xInfo Info, yInfo Info) (int, int) {
 }
 
 // Start Math Functions
+func RoundUp(num, denom int) int {
+	if num%denom == 0 {
+		return num / denom
+	}
+	return 1 + num/denom
+}
+
 func GetChunkBlock(row, chunkR, chunkC int, xInfo Info, yInfo Info) (int, int) {
 	_, numCols := GetDimensions(xInfo, yInfo)
 	numChunksOnCol := int(math.Ceil(float64(numCols) / float64(chunkC)))

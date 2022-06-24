@@ -66,7 +66,8 @@ func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64
 }
 
 func searchBlob(areaMap *[][]square, loc tools.OrderedPair, adjType int, thresholdsize int, wet byte) (blob, bool) {
-	blob := blob{[]tools.OrderedPair{loc}, 0, thresholdsize, wet}
+	blob := blob{make([]tools.OrderedPair, 1, thresholdsize), 0, thresholdsize, wet}
+	blob.Elements[0] = loc
 	searchStack := []tools.OrderedPair{loc}
 
 	skip := false
