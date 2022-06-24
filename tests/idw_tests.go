@@ -5,7 +5,6 @@ import (
 	tools "app/tools"
 	processing "app/tools/processing"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -14,7 +13,7 @@ import (
 )
 
 func testIDW() {
-	fmt.Printf("____________________________\nIDW\n")
+	bunyan.Infof("____________________________\nIDW\n")
 	chunkR := 3
 	chunkC := 2
 	pow := 1.7 // don't change
@@ -23,17 +22,17 @@ func testIDW() {
 	srs := gdal.CreateSpatialReference("")
 	err := srs.FromEPSG(epsg)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 	proj, err := srs.ToWKT()
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
 	filepath := "tests/idw_files/idw_in.txt"
 	listPoints, xInfo, yInfo, err := processing.ReadData(filepath)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
 	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
@@ -62,8 +61,8 @@ func testIDW() {
 		processing.TransferType(completeOutfileChunkedTif, completeOutfileChunkedAsc, "Int16")
 
 		correct := fmt.Sprintf("tests/idw_files/idw_correct_step%.0f-%.0f.asc", xInfo.Step, yInfo.Step)
-		fmt.Printf("\tNO CHUNKING: %s\t\t\t%v\n", completeOutfileAsc, sameFiles(completeOutfileAsc, correct))
-		fmt.Printf("\tCHUNKING: %s\t\t\t%v\n", completeOutfileChunkedAsc, sameFiles(completeOutfileChunkedAsc, correct))
+		bunyan.Infof("\tNO CHUNKING: %s\t\t\t%v\n", completeOutfileAsc, sameFiles(completeOutfileAsc, correct))
+		bunyan.Infof("\tCHUNKING: %s\t\t\t%v\n", completeOutfileChunkedAsc, sameFiles(completeOutfileChunkedAsc, correct))
 
 		if !sameFiles(completeOutfileAsc, correct) {
 			bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", completeOutfileAsc, correct)
@@ -80,5 +79,5 @@ func testIDW() {
 			}
 		}
 	}
-	fmt.Printf("____________________________\n")
+	bunyan.Infof("____________________________\n")
 }

@@ -3,7 +3,6 @@ package processing
 import (
 	"app/tools"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -40,7 +39,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 		// fmt.Println("Creating Raster")
 		driver, err := gdal.GetDriverByName(driver)
 		if err != nil {
-			log.Fatal(err)
+			bunyan.Fatal(err)
 			return err
 		}
 		// fmt.Printf("Creating dataset\n")
@@ -56,7 +55,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 		var err error
 		dataset, err = gdal.Open(filename, gdal.Update)
 		if err != nil {
-			log.Fatal(err)
+			bunyan.Fatal(err)
 			return err
 		}
 
@@ -130,7 +129,7 @@ func GetInfoGDAL(filepath string) (GDalInfo, tools.OrderedPair, error) {
 func TransferType(src string, dst string, outputType string) {
 	DS, err := gdal.Open(src, gdal.ReadOnly)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
 	// datatype := gdal.Int16
@@ -142,7 +141,7 @@ func TransferType(src string, dst string, outputType string) {
 	}
 	_, err = gdal.Translate(dst, DS, opts)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
 	// gdal.GDALTranslateOptions()

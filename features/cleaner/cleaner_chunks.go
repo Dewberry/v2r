@@ -4,7 +4,6 @@ import (
 	"app/tools"
 	processing "app/tools/processing"
 
-	"log"
 	"math"
 
 	"time"
@@ -46,7 +45,7 @@ func cleanChunk(jobs chan chunkJob, chunkChannel chan chunkFillStruct) {
 	for j := range jobs {
 		areaMap, err := readFileChunk(j.Filepath, tools.MakePair(j.Offset.R-j.ICP.RStart, j.Offset.C-j.ICP.CStart), j.Size)
 		if err != nil {
-			log.Fatal(err)
+			bunyan.Fatal(err)
 		}
 
 		cStats := cleanAreaMap(&areaMap, j.Tolerance, j.AreaSize, j.AdjType, j.ICP)
@@ -83,7 +82,7 @@ func makeChunk(buffer tools.OrderedPair, chunkSize tools.OrderedPair, rowsAndCol
 
 func CleanWithChunking(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, chunkSize tools.OrderedPair, adjType int) error {
 	gdal, rowsAndCols, err := processing.GetInfoGDAL(filepath)
-	bunyan.Info("img rows x cols: %v", rowsAndCols)
+	bunyan.Infof("img rows x cols: %v", rowsAndCols)
 	if err != nil {
 		return err
 	}
@@ -94,17 +93,19 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 	buffer := bufferSize(adjType, tolerance)
 
 	cStats := cleanerStats{}
-	totalChunks := int((1+rowsAndCols.R)/chunkSize.R) * int((1+rowsAndCols.C)/chunkSize.C)
-
-	if totalChunks == 0 {
-		bunyan.Fatal("chunk size, %v too large for total image %v, total chunks = 0", chunkSize, rowsAndCols)
+	if chunkSize.R > rowsAndCols.R || chunkSize.C > rowsAndCols.C {
+		bunyan.Errorf("chunk size, %v too large for total image %v, total chunks = 0", chunkSize, rowsAndCols)
+		bunyan.Warn("Chunk sizes changed to ~1/16 of total size")
+		chunkSize.R = rowsAndCols.R / 4
+		chunkSize.C = rowsAndCols.C / 4
 	}
+	totalChunks := tools.RoundUp(rowsAndCols.R, chunkSize.R) * tools.RoundUp(rowsAndCols.C, chunkSize.C)
 
 	chunkChannel := make(chan chunkFillStruct, totalChunks)
 	jobs := make(chan chunkJob, totalChunks)
 	bunyan.Infof("total chunks: %v\n", totalChunks)
 
-	numWorkers := getChannelSize(chunkSize.R * chunkSize.C)
+	numWorkers := tools.Min(totalChunks, getChannelSize(chunkSize.R*chunkSize.C))
 	bunyan.Infof("buffered channel size: %v", numWorkers)
 	for i := 0; i < numWorkers; i++ {
 		go cleanChunk(jobs, chunkChannel)
@@ -136,9 +137,9 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 			bunyan.Infof("~%d%%, %v / %v", 100*(j+1)/totalChunks, j+1, totalChunks)
 		} else {
 			bunyan.Debugf("%v / %v     wait time: % v      print time: %v", j+1, totalChunks, received.Sub(start), time.Since(received))
-			totalWait += received.Sub(start)
-			totalPrint += time.Since(received)
 		}
+		totalWait += received.Sub(start)
+		totalPrint += time.Since(received)
 	}
 	bunyan.Debugf("Total Wait: %v", totalWait)
 	bunyan.Debugf("Total Print: %v", totalPrint)

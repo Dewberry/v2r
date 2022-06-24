@@ -2,9 +2,9 @@ package processing
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
+	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/xuri/excelize/v2"
 )
 
@@ -12,7 +12,7 @@ func GetExcelColumn(i int) string {
 	i++ // 1-indexed
 	endcol, err := excelize.CoordinatesToCellName(i, 1)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 	return strings.TrimRight(endcol, "1")
 

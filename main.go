@@ -8,7 +8,6 @@ import (
 	processing "app/tools/processing"
 	"flag"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -89,10 +88,10 @@ func clean(filepath string) {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
-	fmt.Printf("Outfile: %s\nFinished cleaning in %v\n", outfile, time.Since(start))
+	bunyan.Infof("Outfile: %s\nFinished cleaning in %v\n", outfile, time.Since(start))
 
 }
 
@@ -116,11 +115,11 @@ func doIDW() {
 	srs := gdal.CreateSpatialReference("")
 	err := srs.FromEPSG(epsg)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 	proj, err := srs.ToWKT()
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 
 	chunkString := ""
@@ -132,7 +131,7 @@ func doIDW() {
 	// inputFile := "data/small/idw_in.txt"
 	// listPoints, xInfo, yInfo, err := processing.ReadData(inputFile)
 	// if err != nil {
-	// 	log.Fatal(err)
+	// 	bunyan.Fatal(err)
 	// }
 	// From txt file
 
@@ -146,7 +145,7 @@ func doIDW() {
 
 	listPoints, xInfo, yInfo, err := processing.ReadPGData(db, inputQuery, stepX, stepY)
 	if err != nil {
-		log.Fatal(err)
+		bunyan.Fatal(err)
 	}
 	//From db
 
@@ -165,9 +164,9 @@ func doIDW() {
 
 	for pow := powStart; pow <= powStop; pow += powStep {
 		receivedString := <-channel
-		fmt.Println(receivedString)
+		bunyan.Infof(receivedString)
 	}
 
-	bunyan.Info("Completed %v iterations in %v\n", iterations, time.Since(start))
-	bunyan.Info("Outfiles: %vpow{x}\n", outfile)
+	bunyan.Infof("Completed %v iterations in %v\n", iterations, time.Since(start))
+	bunyan.Infof("Outfiles: %vpow{x}\n", outfile)
 }

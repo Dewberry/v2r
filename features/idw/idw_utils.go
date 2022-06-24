@@ -4,8 +4,9 @@ import (
 	"app/tools"
 	processing "app/tools/processing"
 	"fmt"
-	"log"
 	"os"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
 func calculateIDW(locs *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yInfo tools.Info, exp float64, r int, c int) tools.Point {
@@ -53,7 +54,7 @@ func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
 	err := processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
 	if err != nil {
-		log.Fatal("tif", err)
+		bunyan.Fatal("tif", err)
 	}
 }
 
@@ -64,18 +65,18 @@ func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSi
 
 	emptyFile, err := os.Create(fmt.Sprintf("%s.asc", filename))
 	if err != nil {
-		log.Fatal("asc", err)
+		bunyan.Fatal("asc", err)
 	}
 	emptyFile.Close()
 
 	err = processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, false)
 	if err != nil {
-		log.Fatal("asc", err)
+		bunyan.Fatal("asc", err)
 	}
 }
 
 func getChannelSize(chunkSize int) int {
-	var overhead uint64 = 10000000                  // 100 MB overestimate
+	var overhead uint64 = 10000000                  // 10 MB overestimate
 	var subprocess uint64 = uint64(chunkSize * 150) // 4-8 bytes per int + actual bytes, 4 stored; overhead per subprocess estimate
 	return tools.ChannelSize(subprocess, overhead)
 }
