@@ -12,11 +12,18 @@ type blob struct {
 }
 
 type square struct {
-	IsWater   byte
-	Searched  bool
-	Finalized bool
-	IsChanged bool
+	IsWater byte
+	Status  status
 }
+
+type status byte
+
+const (
+	Unsearched status = iota
+	Searched
+	Changed
+	Finalized
+)
 
 //Helper methods for blob and square
 func getSquarePair(areaMap *[][]square, loc tools.OrderedPair) square {
@@ -27,20 +34,16 @@ func getSquareRC(areaMap *[][]square, r int, c int) square {
 	return (*areaMap)[r][c]
 }
 
-func setSearched(areaMap *[][]square, loc tools.OrderedPair, searched bool) {
-	(*areaMap)[loc.R][loc.C].Searched = searched
+func setStatus(areaMap *[][]square, loc tools.OrderedPair, s status) {
+	(*areaMap)[loc.R][loc.C].Status = s
 }
 
-func setFinalized(areaMap *[][]square, loc tools.OrderedPair, finalized bool) {
-	(*areaMap)[loc.R][loc.C].Finalized = finalized
+func getStatus(areaMap *[][]square, loc tools.OrderedPair) status {
+	return (*areaMap)[loc.R][loc.C].Status
 }
 
 func setWet(areaMap *[][]square, loc tools.OrderedPair, wet byte) {
 	(*areaMap)[loc.R][loc.C].IsWater = wet
-}
-
-func setChanged(areaMap *[][]square, loc tools.OrderedPair, changed bool) {
-	(*areaMap)[loc.R][loc.C].IsChanged = changed
 }
 
 func sameBlob(areaMap *[][]square, loc1 tools.OrderedPair, loc2 tools.OrderedPair) bool {
@@ -49,29 +52,30 @@ func sameBlob(areaMap *[][]square, loc1 tools.OrderedPair, loc2 tools.OrderedPai
 
 // length of Elements list unless fixed > 0
 // then return fixed
-func getNumElements(b *blob) int {
-	if b.NumFixed > 0 {
-		return b.NumFixed
-	}
-	return len(b.Elements)
-}
+// func getNumElements(b *blob) int {
+// 	if b.NumFixed > 0 {
+// 		return b.NumFixed
+// 	}
+// 	return len(b.Elements)
+// }
 
 func isBigBlob(b *blob) bool {
 	return b.NumFixed > 0
 }
 
-func updateMapFromBlob(areaMap *[][]square, b *blob, wet byte, finalized bool) {
+func updateMapFromBlob(areaMap *[][]square, b *blob, wet byte, s status) {
 	for _, loc := range b.Elements {
 		b.NumFixed++
 		setWet(areaMap, loc, wet)
-		setFinalized(areaMap, loc, finalized)
-		setChanged(areaMap, loc, wet != b.IsWater)
+
+		setStatus(areaMap, loc, s)
+		// setChanged(areaMap, loc, wet != b.IsWater)
 	}
 	b.Elements = nil
 }
 
-func beenSearched(areaMap *[][]square, loc tools.OrderedPair) bool {
-	return getSquarePair(areaMap, loc).Searched
+func isMinimumStatus(areaMap *[][]square, loc tools.OrderedPair, s status) bool {
+	return getSquarePair(areaMap, loc).Status >= s
 }
 
 //also no data values represented as 255
@@ -83,11 +87,11 @@ func growBlob(areaMap *[][]square, b *blob, loc tools.OrderedPair) {
 	if b.NumFixed > 0 {
 		b.NumFixed++
 		setWet(areaMap, loc, b.IsWater)
-		setFinalized(areaMap, loc, true)
+		setStatus(areaMap, loc, Finalized)
 	} else {
 		b.Elements = append(b.Elements, loc)
 		if len(b.Elements) >= b.ThresholdSize {
-			updateMapFromBlob(areaMap, b, b.IsWater, true)
+			updateMapFromBlob(areaMap, b, b.IsWater, Finalized)
 		}
 	}
 

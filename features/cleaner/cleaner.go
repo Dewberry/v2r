@@ -6,35 +6,33 @@ import (
 	"math"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
-	// bunyan "github.com/Dewberry/paul-bunyan"
 )
 
 func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64, adjType int, ICP innerChunkPartition) cleanerStats {
-	islands, voids := 0, 0
-	islandArea, voidArea := 0, 0
+	statsTotal := cleanerStats{}
 
-	for r := 0; r < len(*areaMap); r++ {
-		for c := 0; c < len((*areaMap)[0]); c++ {
+	for r := 0; r < ICP.REnd; r++ {
+		for c := 0; c < ICP.CEnd; c++ {
 			sq := getSquareRC(areaMap, r, c)
 			if sq.IsWater == 255 {
 				continue
 			}
-			if sq.Searched {
-				if sq.IsChanged && isInPartiion(ICP, tools.MakePair(r, c)) {
+			if isMinimumStatus(areaMap, tools.MakePair(r, c), Searched) {
+				loc := tools.MakePair(r, c)
+				if getStatus(areaMap, loc) == Changed && isInPartiion(ICP, loc) {
 					switch sq.IsWater {
 					case byte(0): // from water to land
-						voidArea++
+						statsTotal.VoidArea++
 						continue
 
 					case byte(1): //land to water
-						islandArea++
+						statsTotal.IslandArea++
 						continue
 					}
 				}
 				continue
 			}
-
-			setSearched(areaMap, tools.MakePair(r, c), true)
+			setStatus(areaMap, tools.MakePair(r, c), Searched)
 			blob, skip := searchBlob(areaMap, tools.MakePair(r, c), adjType, tolerance[getSquareRC(areaMap, r, c).IsWater], getSquareRC(areaMap, r, c).IsWater)
 			if skip {
 				continue
@@ -43,48 +41,47 @@ func cleanAreaMap(areaMap *[][]square, tolerance map[byte]int, pixelArea float64
 			if !isBigBlob(&blob) {
 				switch blob.IsWater {
 				case byte(0): // update island to water
-					updateMapFromBlob(areaMap, &blob, 1, true)
+					updateMapFromBlob(areaMap, &blob, 1, Changed)
 					if isInPartiion(ICP, tools.MakePair(r, c)) {
-						islands++
-						islandArea++
+						statsTotal.Islands++
+						statsTotal.IslandArea++
 					}
-					// islandArea += getNumElements(&blob)
 
 				case byte(1): // update island to water
-					updateMapFromBlob(areaMap, &blob, 0, true)
+					updateMapFromBlob(areaMap, &blob, 0, Changed)
 					if isInPartiion(ICP, tools.MakePair(r, c)) {
-						voids++
-						voidArea++
+						statsTotal.Voids++
+						statsTotal.VoidArea++
 					}
-					// voidArea += getNumElements(&blob)
 				}
 			}
 
 		}
 	}
-	return cleanerStats{islands, voids, islandArea, voidArea}
+	return statsTotal
 }
 
 func searchBlob(areaMap *[][]square, loc tools.OrderedPair, adjType int, thresholdsize int, wet byte) (blob, bool) {
-	blob := blob{make([]tools.OrderedPair, 1, thresholdsize), 0, thresholdsize, wet}
-	blob.Elements[0] = loc
+	blob := blob{make([]tools.OrderedPair, 0, thresholdsize), 0, thresholdsize, wet}
+	blob.Elements = append(blob.Elements, loc)
 	searchStack := []tools.OrderedPair{loc}
 
-	skip := false
+	finalized := false
 	for len(searchStack) > 0 {
 		n := len(searchStack) - 1
 		searchLoc := searchStack[n]
 		searchStack = searchStack[:n]
 
 		adjacents, shouldSkip := getSimilarSurrounding(areaMap, searchLoc, adjType)
-		skip = skip || shouldSkip
+		finalized = finalized || shouldSkip
 
 		for _, adjLoc := range adjacents {
 			growBlob(areaMap, &blob, adjLoc)
 			searchStack = append(searchStack, adjLoc)
 		}
 	}
-	return blob, skip
+	finalized = finalized || isBigBlob(&blob)
+	return blob, finalized
 }
 
 // returns a list of adjacent locations and whether to skip over blob (reached a finalized location)
@@ -100,12 +97,12 @@ func getSimilarSurrounding(areaMap *[][]square, loc tools.OrderedPair, adjType i
 		for _, dir := range directions {
 			adjLoc := tools.MakePair(loc.R+dir*vec.R, loc.C+dir*vec.C)
 			if isInBounds(areaMap, adjLoc) && sameBlob(areaMap, loc, adjLoc) {
-				if getSquarePair(areaMap, adjLoc).Finalized {
+				if isMinimumStatus(areaMap, adjLoc, Changed) {
 					skip = true
 				}
-				if !beenSearched(areaMap, adjLoc) {
+				if !isMinimumStatus(areaMap, adjLoc, Searched) {
 					validSurrounding = append(validSurrounding, adjLoc)
-					setSearched(areaMap, adjLoc, true)
+					setStatus(areaMap, adjLoc, Searched)
 				}
 			}
 		}
