@@ -12,7 +12,7 @@ import (
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func testCleaner() {
+func testCleaner() bool {
 	filepath := "tests/cleaner_files/clean_in.asc" // passed through
 	// toleranceIsland := 40000.0 // standard tolerance
 	// toleranceVoid := 22500.0   // standard tolerance
@@ -24,6 +24,7 @@ func testCleaner() {
 	filepathTif := tools.ChangeExtension(filepath, ".tif")
 	processing.TransferType(filepath, filepathTif, "Byte")
 	bunyan.Infof("____________________________\nCleaner\n")
+	pass := true
 	for _, toleranceIsland := range [2]float64{4.0, 9.0} {
 		for _, adjType := range [2]int{4, 8} {
 
@@ -47,19 +48,22 @@ func testCleaner() {
 			outfileChunkAsc := fmt.Sprintf("%s.asc", outfileChunk)
 			processing.TransferType(outfileChunkTif, outfileChunkAsc, "Int16")
 
-			correct := fmt.Sprintf("tests/cleaner_files/clean_i%.0fv%.0fd%v_correct.asc", toleranceIsland, toleranceVoid, adjType)
+			correctFP := fmt.Sprintf("tests/cleaner_files/clean_i%.0fv%.0fd%v_correct", toleranceIsland, toleranceVoid, adjType)
+			correct := correctFP + ".asc"
 			bunyan.Infof("\tNO CHUNKING: %s\t%v\n", outfileFullAsc, sameFiles(outfileFullAsc, correct))
 			bunyan.Infof("\tCHUNKING: %s\t%v\n", outfileChunkAsc, sameFiles(outfileChunkAsc, correct))
 
 			if !sameFiles(outfileFullAsc, correct) {
 				bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", outfileFullAsc, correct)
+				pass = false
 			}
 			if !sameFiles(outfileChunkAsc, correct) {
 				bunyan.Errorf("FILE: %s\tincorrect\t| Correct: %s", outfileChunkAsc, correct)
+				pass = false
 			}
 
 			//Delete unnecessary files
-			for _, fp := range [2]string{outfileFull, outfileChunk} {
+			for _, fp := range [3]string{outfileFull, outfileChunk, correctFP} {
 				for _, ext := range [3]string{".asc.aux.xml", ".prj", ".tiff"} {
 					os.Remove(fp + ext)
 				}
@@ -69,4 +73,5 @@ func testCleaner() {
 	// Delete tif creation
 	os.Remove(filepathTif)
 	bunyan.Infof("____________________________\n")
+	return pass
 }

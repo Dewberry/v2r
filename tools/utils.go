@@ -7,7 +7,6 @@ import (
 	"time"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
-	"github.com/labstack/gommon/log"
 	"github.com/natefinch/lumberjack"
 	"github.com/pbnjay/memory"
 )
@@ -189,8 +188,8 @@ func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
 	bunyan.Debugf("Appx Memory/subprocess: %d", appxSubprocess)
 	bunyan.Debugf("Appx Overhead: %v", appxOverhead)
 
-	calculated := int((memory.FreeMemory()-appxOverhead)/appxSubprocess) * 7 / 10
-	bunyan.Info("using 70%% of free memory")
+	calculated := int((memory.FreeMemory()*8/10 - appxOverhead) / appxSubprocess)
+	bunyan.Info("using 80%% of free memory")
 	bunyan.Infof("allocated %v", calculated)
 
 	return Max(1, calculated)
@@ -201,9 +200,8 @@ func ChangeExtension(filename string, ext string) string {
 	return fmt.Sprintf("%s%s", filename[:period], ext)
 }
 
-func SetLogging(level log.Lvl) {
+func SetLogging() {
 	logger := bunyan.New()
-	logger.SetLevel(level)
 	date := time.Now().Format("2006-02-01_15:04:05") // YYYY-MM-DD
 	file := fmt.Sprintf("logs/%s.txt", date)
 	logger.SetOutput(&lumberjack.Logger{

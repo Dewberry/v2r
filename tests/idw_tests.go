@@ -12,7 +12,7 @@ import (
 	"github.com/dewberry/gdal"
 )
 
-func testIDW() {
+func testIDW() bool {
 	bunyan.Infof("____________________________\nIDW\n")
 	chunkR := 3
 	chunkC := 2
@@ -35,6 +35,7 @@ func testIDW() {
 		bunyan.Fatal(err)
 	}
 
+	pass := true
 	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
 
 	for _, stepxy := range [2][2]float64{{1.0, 1.0}, {2.0, 2.0}} {
@@ -66,9 +67,11 @@ func testIDW() {
 
 		if !sameFiles(completeOutfileAsc, correct) {
 			bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", completeOutfileAsc, correct)
+			pass = false
 		}
 		if !sameFiles(completeOutfileChunkedAsc, correct) {
 			bunyan.Errorf("FILE: %s\tincorrect\t| Correct: %s", completeOutfileChunkedAsc, correct)
+			pass = false
 		}
 
 		completeOutfile := completeOutfileTif[:strings.LastIndex(completeOutfileTif, ".tiff")]
@@ -80,4 +83,5 @@ func testIDW() {
 		}
 	}
 	bunyan.Infof("____________________________\n")
+	return pass
 }

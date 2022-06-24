@@ -22,22 +22,28 @@ func main() {
 	var runTests bool
 	var runDebug bool
 	var runError bool
+	var useLumberjack bool
 	flag.StringVar(&path, "f", "data/cleaner/clipped_wet_dry.tif", "pathtotif")
 	flag.BoolVar(&runIDW, "i", false, "run the idw?")
 	flag.BoolVar(&runClean, "c", false, "run the cleaner?")
 	flag.BoolVar(&runTests, "t", false, "run the tests?")
-	flag.BoolVar(&runDebug, "d", false, "run the tests?")
-	flag.BoolVar(&runError, "e", false, "run the tests?")
+	flag.BoolVar(&runDebug, "d", false, "use debug level?")
+	flag.BoolVar(&runError, "e", false, "use error level?")
+	flag.BoolVar(&useLumberjack, "l", false, "use lumberjack?")
 	flag.Parse()
 
 	if runError {
 		logger := bunyan.New()
 		logger.SetLevel(bunyan.ERROR)
 	} else if runDebug {
-		tools.SetLogging(bunyan.DEBUG)
+		logger := bunyan.New()
+		logger.SetLevel(bunyan.DEBUG)
 	} else {
 		logger := bunyan.New()
 		logger.SetLevel(bunyan.INFO)
+	}
+	if useLumberjack {
+		tools.SetLogging()
 	}
 	// bunyan.Info("path: ", path)
 
