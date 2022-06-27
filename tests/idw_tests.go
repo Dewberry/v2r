@@ -13,7 +13,8 @@ import (
 )
 
 func testIDW() bool {
-	bunyan.Infof("____________________________\nIDW\n")
+	bunyan.Info("____________________________")
+	bunyan.Info("IDW")
 	chunkR := 3
 	chunkC := 2
 	pow := 1.7 // don't change
@@ -62,15 +63,15 @@ func testIDW() bool {
 		processing.TransferType(completeOutfileChunkedTif, completeOutfileChunkedAsc, "Int16")
 
 		correct := fmt.Sprintf("tests/idw_files/idw_correct_step%.0f-%.0f.asc", xInfo.Step, yInfo.Step)
-		bunyan.Infof("\tNO CHUNKING: %s\t\t\t%v\n", completeOutfileAsc, sameFiles(completeOutfileAsc, correct))
-		bunyan.Infof("\tCHUNKING: %s\t\t\t%v\n", completeOutfileChunkedAsc, sameFiles(completeOutfileChunkedAsc, correct))
+		bunyan.Infof("     NO CHUNKING: %s         %v", completeOutfileAsc, sameFiles(completeOutfileAsc, correct))
+		bunyan.Infof("     CHUNKING: %s     %v", completeOutfileChunkedAsc, sameFiles(completeOutfileChunkedAsc, correct))
 
 		if !sameFiles(completeOutfileAsc, correct) {
-			bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", completeOutfileAsc, correct)
+			bunyan.Errorf("FILE: %s  | Correct: %s", completeOutfileAsc, correct)
 			pass = false
 		}
 		if !sameFiles(completeOutfileChunkedAsc, correct) {
-			bunyan.Errorf("FILE: %s\tincorrect\t| Correct: %s", completeOutfileChunkedAsc, correct)
+			bunyan.Errorf("FILE: %s  | Correct: %s", completeOutfileChunkedAsc, correct)
 			pass = false
 		}
 
@@ -82,6 +83,6 @@ func testIDW() bool {
 			}
 		}
 	}
-	bunyan.Infof("____________________________\n")
+	bunyan.Info("____________________________")
 	return pass
 }

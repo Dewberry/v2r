@@ -13,8 +13,8 @@ func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
-	bunyan.Debugf("XINFO: %v\nYINFO: %v\n", xInfo, yInfo)
-	bunyan.Debugf("[%v X %v]\n", numRows, numCols)
+	bunyan.Debugf("XINFO: %v     YINFO: %v", xInfo, yInfo)
+	bunyan.Debugf("[%v X %v]", numRows, numCols)
 
 	totalSize := tools.RCToPair(numRows, numCols)
 	gdal := processing.CreateGDalInfo(xInfo.Min, yInfo.Min, xInfo.Step, yInfo.Step, 7, proj)

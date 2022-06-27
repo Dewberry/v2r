@@ -23,7 +23,8 @@ func testCleaner() bool {
 
 	filepathTif := tools.ChangeExtension(filepath, ".tif")
 	processing.TransferType(filepath, filepathTif, "Byte")
-	bunyan.Infof("____________________________\nCleaner\n")
+	bunyan.Info("____________________________")
+	bunyan.Info("Cleaner")
 	pass := true
 	for _, toleranceIsland := range [2]float64{4.0, 9.0} {
 		for _, adjType := range [2]int{4, 8} {
@@ -50,15 +51,15 @@ func testCleaner() bool {
 
 			correctFP := fmt.Sprintf("tests/cleaner_files/clean_i%.0fv%.0fd%v_correct", toleranceIsland, toleranceVoid, adjType)
 			correct := correctFP + ".asc"
-			bunyan.Infof("\tNO CHUNKING: %s\t%v\n", outfileFullAsc, sameFiles(outfileFullAsc, correct))
-			bunyan.Infof("\tCHUNKING: %s\t%v\n", outfileChunkAsc, sameFiles(outfileChunkAsc, correct))
+			bunyan.Infof("     NO CHUNKING: %s         %v", outfileFullAsc, sameFiles(outfileFullAsc, correct))
+			bunyan.Infof("     CHUNKING: %s     %v", outfileChunkAsc, sameFiles(outfileChunkAsc, correct))
 
 			if !sameFiles(outfileFullAsc, correct) {
-				bunyan.Errorf("FILE: %s\t\tincorrect\t| Correct: %s", outfileFullAsc, correct)
+				bunyan.Errorf("FILE: %s  |  Correct: %s", outfileFullAsc, correct)
 				pass = false
 			}
 			if !sameFiles(outfileChunkAsc, correct) {
-				bunyan.Errorf("FILE: %s\tincorrect\t| Correct: %s", outfileChunkAsc, correct)
+				bunyan.Errorf("FILE: %s  |  Correct: %s", outfileChunkAsc, correct)
 				pass = false
 			}
 
@@ -72,6 +73,6 @@ func testCleaner() bool {
 	}
 	// Delete tif creation
 	os.Remove(filepathTif)
-	bunyan.Infof("____________________________\n")
+	bunyan.Info("____________________________")
 	return pass
 }

@@ -3,7 +3,6 @@ package processing
 import (
 	"app/tools"
 	"fmt"
-	"strconv"
 	"strings"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
@@ -67,25 +66,6 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 	return raster.IO(gdal.Write, offsets.C, offsets.R, bufferSize.C, bufferSize.R, unwrappedMatrix, bufferSize.C, bufferSize.R, 0, 0)
 }
 
-func getEPSG(s string) int {
-	loc := strings.LastIndex(s, "ID[\"EPSG\",") + 10
-	if loc == -1 {
-		bunyan.Info("invalid or no epsg given, 2284 used instead")
-		return 2284
-	}
-	epsg5, err := strconv.Atoi(s[loc : loc+5])
-	if err != nil {
-		epsg4, err := strconv.Atoi(s[loc : loc+4])
-		if err != nil {
-			bunyan.Info("invalid or no epsg given, 2284 used instead")
-			return 2284
-		}
-		return epsg4
-	}
-	return epsg5
-
-}
-
 func ReadGDAL(filepath string, offsets tools.OrderedPair, size tools.OrderedPair, entireFile bool) ([]byte, GDalInfo, tools.OrderedPair, error) {
 	DS, err := gdal.Open(filepath, gdal.ReadOnly)
 	if err != nil {
@@ -120,7 +100,6 @@ func GetInfoGDAL(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	numRows := DS.RasterYSize()
 
 	inGT := DS.GeoTransform()
-	// bunyan.Debug(info)
 	gdReturn := GDalInfo{inGT[0], inGT[3], inGT[1], inGT[5], gdal.DataType(gdal.Byte), DS.Projection()}
 
 	return gdReturn, tools.MakePair(numRows, numCols), nil
@@ -132,7 +111,6 @@ func TransferType(src string, dst string, outputType string) {
 		bunyan.Fatal(err)
 	}
 
-	// datatype := gdal.Int16
 	opts := []string{"-ot", outputType}
 	if strings.HasSuffix(dst, ".tiff") || strings.HasSuffix(dst, ".tif") {
 		opts = append(opts, "-of", "GTiff",
@@ -143,6 +121,4 @@ func TransferType(src string, dst string, outputType string) {
 	if err != nil {
 		bunyan.Fatal(err)
 	}
-
-	// gdal.GDALTranslateOptions()
 }

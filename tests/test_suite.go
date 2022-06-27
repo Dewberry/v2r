@@ -6,6 +6,6 @@ func TestSuite() {
 
 	passedIDW := testIDW()
 	passedCleaner := testCleaner()
-	bunyan.Infof("Passed All IDW Tests? \t%v", passedIDW)
-	bunyan.Infof("Passed All Cleaner Tests?\t%v", passedCleaner)
+	bunyan.Infof("Passed All IDW Tests?      %v", passedIDW)
+	bunyan.Infof("Passed All Cleaner Tests?  %v", passedCleaner)
 }

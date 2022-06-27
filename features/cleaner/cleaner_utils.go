@@ -15,8 +15,8 @@ type cleanerStats struct {
 }
 
 func printStats(c cleanerStats, pixelArea float64) {
-	bunyan.Infof("filled in %v islands covering %.2f sq footage\n", c.Islands, float64(c.IslandArea)*pixelArea)
-	bunyan.Infof("filled in %v voids covering %.2f sq footage\n", c.Voids, float64(c.VoidArea)*pixelArea)
+	bunyan.Infof("cleaned %v islands covering %.2f sq footage", c.Islands, float64(c.IslandArea)*pixelArea)
+	bunyan.Infof("cleaned %v voids covering %.2f sq footage", c.Voids, float64(c.VoidArea)*pixelArea)
 }
 
 func isInPartiion(ICP innerChunkPartition, loc tools.OrderedPair) bool {

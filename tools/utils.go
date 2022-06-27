@@ -182,15 +182,15 @@ func CalculateWeight(cell Point, data *[]Point, exp float64) float64 {
 
 //Memory Management
 func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
-	bunyan.Debugf("Total system memory: %d", memory.TotalMemory())
-	bunyan.Infof("Free memory: %d", memory.FreeMemory())
+	bunyan.Debugf("Total system memory: %d bytes", memory.TotalMemory())
+	bunyan.Infof("Free memory: %d bytes", memory.FreeMemory())
 
-	bunyan.Debugf("Appx Memory/subprocess: %d", appxSubprocess)
-	bunyan.Debugf("Appx Overhead: %v", appxOverhead)
+	bunyan.Debugf("Appx Memory/subprocess: %d bytes", appxSubprocess)
+	bunyan.Debugf("Appx Overhead: %v bytes", appxOverhead)
 
 	calculated := int((memory.FreeMemory()*8/10 - appxOverhead) / appxSubprocess)
 	bunyan.Info("using 80%% of free memory")
-	bunyan.Infof("allocated %v", calculated)
+	bunyan.Infof("allocated channel size: %v ", calculated)
 
 	return Max(1, calculated)
 }

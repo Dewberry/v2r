@@ -103,7 +103,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 
 	chunkChannel := make(chan chunkFillStruct, totalChunks)
 	jobs := make(chan chunkJob, totalChunks)
-	bunyan.Infof("total chunks: %v\n", totalChunks)
+	bunyan.Infof("total chunks: %v", totalChunks)
 
 	numWorkers := tools.Min(totalChunks, getChannelSize(chunkSize.R*chunkSize.C))
 	bunyan.Infof("buffered channel size: %v", numWorkers)
@@ -141,7 +141,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 		totalWait += received.Sub(start)
 		totalPrint += time.Since(received)
 	}
-	bunyan.Debugf("Total Wait: %v", totalWait)
+	bunyan.Debugf("Total Wait:  %v", totalWait)
 	bunyan.Debugf("Total Print: %v", totalPrint)
 	printStats(cStats, areaSize)
 

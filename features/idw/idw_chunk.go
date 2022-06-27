@@ -56,14 +56,14 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
-	bunyan.Debugf("XINFO: %v\nYINFO: %v\n", xInfo, yInfo)
-	bunyan.Infof("RowsXCols: [%v X %v]\n", numRows, numCols)
-	bunyan.Infof("Chunk Dim: [%v X %v]\n", chunkR, chunkC)
+	bunyan.Debugf("XINFO: %v     YINFO: %v", xInfo, yInfo)
+	bunyan.Infof("RowsXCols: [%v X %v]", numRows, numCols)
+	bunyan.Infof("Chunk Dim: [%v X %v]", chunkR, chunkC)
 
 	totalChunks := tools.RoundUp(numRows, chunkR) * tools.RoundUp(numCols, chunkC)
 	chunkChannel := make(chan chunkIDW, totalChunks)
 	jobs := make(chan chunkJob, totalChunks)
-	bunyan.Infof("total chunks: %v\n", totalChunks)
+	bunyan.Infof("total chunks: %v", totalChunks)
 	numWorkers := tools.Min(totalChunks, getChannelSize(chunkR*chunkC))
 
 	bunyan.Infof("buffered channel size: %v", numWorkers)
@@ -93,7 +93,7 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
 
 		if (i+1)%progress == 0 {
-			bunyan.Infof("~%d%%, %v / %v\twait time: % v      print time: %v", 100*(i+1)/totalChunks, i+1, totalChunks, received.Sub(start), time.Since(received))
+			bunyan.Infof("~%d%%, %v / %v", 100*(i+1)/totalChunks, i+1, totalChunks)
 		} else {
 			bunyan.Debugf("%v / %v     wait time: % v      print time: %v", i+1, totalChunks, received.Sub(start), time.Since(received))
 		}
