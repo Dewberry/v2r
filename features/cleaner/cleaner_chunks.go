@@ -94,7 +94,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 
 	cStats := cleanerStats{}
 	if chunkSize.R > rowsAndCols.R || chunkSize.C > rowsAndCols.C {
-		bunyan.Errorf("chunk size, %v too large for total image %v, total chunks = 0", chunkSize, rowsAndCols)
+		bunyan.Warnf("chunk size, %v too large for total image %v", chunkSize, rowsAndCols)
 		bunyan.Warn("Chunk sizes changed to ~1/16 of total size")
 		chunkSize.R = rowsAndCols.R / 4
 		chunkSize.C = rowsAndCols.C / 4

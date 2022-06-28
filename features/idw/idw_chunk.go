@@ -46,7 +46,7 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
 
 	if chunkR > numRows || chunkC > numCols {
-		bunyan.Errorf("chunk size, %v too large for total image %v, total chunks = 0", tools.MakePair(chunkR, chunkC), tools.MakePair(numRows, numCols))
+		bunyan.Warnf("chunk size, %v too large for total image %v", tools.MakePair(chunkR, chunkC), tools.MakePair(numRows, numCols))
 		bunyan.Warn("Chunk sizes changed to ~1/16 of total size")
 		chunkR = numRows / 4
 		chunkC = numCols / 4

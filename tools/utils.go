@@ -111,7 +111,7 @@ func MakeCoordSpace(listPoints *[]Point, xInfo Info, yInfo Info) map[OrderedPair
 		elev, exists := seen[pair]
 		if exists {
 			newElev := (p.Weight + elev.Weight) / 2
-			fmt.Printf("%v already exists\nold elev: %v\t this elev%v\nave elev: %v\n______\n", pair, elev, p.Weight, newElev)
+			bunyan.Debugf("%v already exists | old elev: %v | this elev%v | ave elev: %v", pair, elev, p.Weight, newElev)
 			p.Weight = newElev
 		}
 		seen[pair] = p
@@ -190,7 +190,7 @@ func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
 
 	calculated := int((memory.FreeMemory()*8/10 - appxOverhead) / appxSubprocess)
 	bunyan.Infof("using 80%% of free memory")
-	bunyan.Infof("allocated channel size: %v ", calculated)
+	bunyan.Debugf("allocated channel size: %v ", calculated)
 
 	return Max(1, calculated)
 }
