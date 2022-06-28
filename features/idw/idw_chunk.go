@@ -23,18 +23,6 @@ type chunkIDW struct {
 	Data [][]float64
 }
 
-func chunkUpdate(grid *[][]float64, gridChunk *chunkIDW, channel chan bool) {
-	r0, c0 := tools.PairToRC(gridChunk.Pair)
-
-	for r := 0; r < len(gridChunk.Data); r++ {
-		for c := 0; c < len(gridChunk.Data[0]); c++ {
-			(*grid)[r0+r][c0+c] = gridChunk.Data[r][c]
-		}
-	}
-
-	channel <- true
-}
-
 func makeGridIDW(jobs chan chunkJob, channel chan chunkIDW) {
 	for j := range jobs {
 		rStart, cStart := tools.PairToRC(j.start)
@@ -56,6 +44,14 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	start := time.Now()
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
+
+	if chunkR > numRows || chunkC > numCols {
+		bunyan.Errorf("chunk size, %v too large for total image %v, total chunks = 0", tools.MakePair(chunkR, chunkC), tools.MakePair(numRows, numCols))
+		bunyan.Warn("Chunk sizes changed to ~1/16 of total size")
+		chunkR = numRows / 4
+		chunkC = numCols / 4
+	}
+
 	bunyan.Debugf("XINFO: %v     YINFO: %v", xInfo, yInfo)
 	bunyan.Infof("RowsXCols: [%v X %v]", numRows, numCols)
 	bunyan.Infof("Chunk Dim: [%v X %v]", chunkR, chunkC)

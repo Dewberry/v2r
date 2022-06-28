@@ -21,8 +21,6 @@ func testCleaner() bool {
 	chunkx := 2
 	chunky := 3
 
-	filepathTif := tools.ChangeExtension(filepath, ".tif")
-	processing.TransferType(filepath, filepathTif, "Byte")
 	bunyan.Info("____________________________")
 	bunyan.Info("Cleaner")
 	pass := true
@@ -32,11 +30,11 @@ func testCleaner() bool {
 			outfileFull := fmt.Sprintf("%s_isl%.0fvoid%.0f_cleaned%v", strings.TrimSuffix(filepath, ".asc"), toleranceIsland, toleranceVoid, adjType)
 			outfileChunk := outfileFull + "chunked"
 
-			err := cleaner.CleanFull(filepathTif, outfileFull, toleranceIsland, toleranceVoid, adjType)
+			err := cleaner.CleanFull(filepath, outfileFull, toleranceIsland, toleranceVoid, adjType)
 			if err != nil {
 				bunyan.Fatal(err)
 			}
-			err = cleaner.CleanWithChunking(filepathTif, outfileChunk, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
+			err = cleaner.CleanWithChunking(filepath, outfileChunk, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
 			if err != nil {
 				bunyan.Fatal(err)
 			}
@@ -71,8 +69,6 @@ func testCleaner() bool {
 			}
 		}
 	}
-	// Delete tif creation
-	os.Remove(filepathTif)
 	bunyan.Info("____________________________")
 	return pass
 }

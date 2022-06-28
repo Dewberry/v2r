@@ -189,7 +189,7 @@ func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {
 	bunyan.Debugf("Appx Overhead: %v bytes", appxOverhead)
 
 	calculated := int((memory.FreeMemory()*8/10 - appxOverhead) / appxSubprocess)
-	bunyan.Info("using 80%% of free memory")
+	bunyan.Infof("using 80%% of free memory")
 	bunyan.Infof("allocated channel size: %v ", calculated)
 
 	return Max(1, calculated)
