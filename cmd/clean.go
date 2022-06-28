@@ -36,17 +36,16 @@ var cleanCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(cleanCmd)
 
-	cleanCmd.Flags().StringVarP(&filepath, "file", "f", "", "File to run [Needed]")
+	cleanCmd.Flags().StringVarP(&filepath, "file", "f", "", "File to run (required)")
 
-	cleanCmd.Flags().BoolVarP(&useChunk, "concurrent", "c", true, "Run concurrently or serially")
-	cleanCmd.Flags().IntVarP(&adjType, "adjacent", "a", 8, "Set adjacency type 4 (NSEW only), 8 (diagonals included)")
+	cleanCmd.Flags().BoolVarP(&useChunk, "concurrent", "c", false, "Run concurrently or serially")
+	cleanCmd.Flags().IntVarP(&adjType, "adjacent", "a", 8, "Set adjacency type [4: only cardinal directions | 8: include ordinal]")
 
 	cleanCmd.Flags().Float64Var(&toleranceIsland, "ti", 40000.0, "Tolerance for islands")
 	cleanCmd.Flags().Float64Var(&toleranceVoid, "tv", 22500.0, "Tolerance for voids")
 	cleanCmd.Flags().IntVar(&cleanChunkX, "cx", 256*10, "Chunk size in x-direction")
 	cleanCmd.Flags().IntVar(&cleanChunkY, "cy", 256*10, "Chunk size in y-direction")
 
-	initLogging()
 }
 
 func clean() {

@@ -13,6 +13,7 @@ var testCmd = &cobra.Command{
 	Short: "Run test suite",
 	Long:  `Testing suite for idw and cleaner. Failed tests show at logger.ERROR level`,
 	Run: func(cmd *cobra.Command, args []string) {
+
 		bunyan.Info("Test Suite Started")
 		tests.TestSuite()
 		bunyan.Info("Test Suite Completed")
@@ -21,7 +22,4 @@ var testCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(testCmd)
-
-	initLogging()
-
 }

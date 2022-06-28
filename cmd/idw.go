@@ -49,8 +49,8 @@ var idwCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(idwCmd)
 
-	idwCmd.Flags().BoolVar(&fromDB, "db", true, "Read from db (true) or from txt file (false)")
-	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", true, "Run program concurrently (true) or serially (false)")
+	idwCmd.Flags().BoolVar(&fromDB, "db", false, "Read from db (true) or from txt file (false)")
+	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", false, "Run program concurrently (true) or serially (false)")
 
 	idwCmd.Flags().IntVar(&idwChunkX, "cx", 200, "Set chunk size in x-direction")
 	idwCmd.Flags().IntVar(&idwChunkY, "cy", 200, "St chunk size in y-direction")
@@ -65,7 +65,6 @@ func init() {
 	idwCmd.Flags().StringVarP(&infile, "file", "f", "tests/idw_files/idw_in.txt", "set filepath (used if db=false)")
 	idwCmd.Flags().StringVar(&outfileFolder, "outPath", "data/idw/", "Set outfile location")
 
-	initLogging()
 }
 
 func doIDW() {
