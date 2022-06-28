@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 
+	bunyan "github.com/Dewberry/paul-bunyan"
+	"github.com/dewberry/gdal"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -129,4 +131,27 @@ func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tool
 	}
 
 	return listPoints, xInfo, yInfo, nil
+}
+
+func ReadGeoPackage(filename string, layer string, field string, stepX float64, stepY float64) ([]tools.Point, gdal.SpatialReference, tools.Info, tools.Info) {
+	listPoints, srs := getGPKGPoints(filename, layer, field)
+
+	xInfo, yInfo := tools.MakeInfo(), tools.MakeInfo()
+
+	xInfo.Step = stepX
+	yInfo.Step = stepY
+	for _, p := range listPoints {
+		xInfo.Min = math.Min(xInfo.Min, p.X)
+		xInfo.Max = math.Max(xInfo.Max, p.X)
+
+		yInfo.Min = math.Min(yInfo.Min, p.Y)
+		yInfo.Max = math.Max(yInfo.Max, p.Y)
+	}
+
+	bunyan.Debug("xInfo", xInfo)
+	bunyan.Debug("yInfo", yInfo)
+	bunyan.Debug(listPoints)
+
+	return listPoints, srs, xInfo, yInfo
+
 }

@@ -122,3 +122,29 @@ func TransferType(src string, dst string, outputType string) {
 		bunyan.Fatal(err)
 	}
 }
+
+func getGPKGPoints(filepath string, layer string, field string) ([]tools.Point, gdal.SpatialReference) {
+	ds := gdal.OpenDataSource(filepath, int(gdal.ReadOnly))
+	defer ds.Destroy()
+
+	bunyan.Debug(filepath, layer, field)
+	l := ds.LayerByName(layer)
+	bunyan.Debug((l.Name()))
+
+	fieldDef := l.Definition()
+	bunyan.Debugf("field def: %v\tcount: %v\n", fieldDef.Name(), fieldDef.FieldCount())
+
+	fieldIndex := fieldDef.FieldIndex(field)
+	bunyan.Debug("field index", fieldIndex)
+
+	count, _ := l.FeatureCount(true)
+
+	pointList := make([]tools.Point, 0, fieldDef.FieldCount())
+	for i := 1; i < count+1; i++ {
+		feature := l.Feature(int64(i))
+		geom := feature.Geometry()
+		pointList = append(pointList, tools.MakePoint(geom.X(0), geom.Y(0), feature.FieldAsFloat64(fieldIndex)))
+	}
+
+	return pointList, l.SpatialReference()
+}

@@ -20,8 +20,10 @@ import (
 )
 
 var (
-	fromDB        bool
+	fromGPKG      bool
 	useChunking   bool
+	outExcel      bool
+	outAscii      bool
 	idwChunkX     int
 	idwChunkY     int
 	expIncrement  float64
@@ -31,6 +33,8 @@ var (
 	stepY         float64
 	epsg          int
 	infile        string
+	layer         string
+	field         string
 	outfileFolder string
 )
 
@@ -49,8 +53,10 @@ var idwCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(idwCmd)
 
-	idwCmd.Flags().BoolVar(&fromDB, "db", false, "Read from db (true) or from txt file (false)")
+	idwCmd.Flags().BoolVarP(&fromGPKG, "gpkg", "g", false, "Read from gpkg (true) or from txt file (false)")
 	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", false, "Run program concurrently (true) or serially (false)")
+	idwCmd.Flags().BoolVar(&outAscii, "ascii", false, "Write to ascii file?")
+	idwCmd.Flags().BoolVar(&outExcel, "excel", false, "Write to excel spreadsheet?")
 
 	idwCmd.Flags().IntVar(&idwChunkX, "cx", 200, "Set chunk size in x-direction")
 	idwCmd.Flags().IntVar(&idwChunkY, "cy", 200, "St chunk size in y-direction")
@@ -62,47 +68,42 @@ func init() {
 	idwCmd.Flags().Float64Var(&stepX, "sx", 100.0, "Step size in x-direction")
 	idwCmd.Flags().Float64Var(&stepY, "sy", 100.0, "Step size in y-direction")
 
-	idwCmd.Flags().StringVarP(&infile, "file", "f", "tests/idw_files/idw_in.txt", "set filepath (used if db=false)")
+	idwCmd.Flags().StringVarP(&infile, "file", "f", "", "Set filepath (required)")
 	idwCmd.Flags().StringVar(&outfileFolder, "outPath", "data/idw/", "Set outfile location")
-
+	idwCmd.Flags().StringVar(&layer, "layer", "layer1", "Set name of layer in geopackage file")
+	idwCmd.Flags().StringVar(&field, "field", "elevation", "Set name of field in geopackage file")
 }
 
 func doIDW() {
 	start := time.Now()
 
-	srs := gdal.CreateSpatialReference("")
-	err := srs.FromEPSG(epsg)
-	if err != nil {
-		bunyan.Fatal(err)
-	}
-	proj, err := srs.ToWKT()
-	if err != nil {
-		bunyan.Fatal(err)
-	}
-
 	var (
 		listPoints []tools.Point
 		xInfo      tools.Info
 		yInfo      tools.Info
+		srs        gdal.SpatialReference
+		proj       string
+		err        error
 	)
 
-	if fromDB {
-		db := processing.DBInit()
-		inputQuery := "SELECT elevation, ST_X(geom), ST_Y(geom) FROM sandbox.location_1;"
-		err = processing.PingWithTimeout(db)
-		if err != nil {
-			fmt.Println("Connected to database?", err)
-		}
+	if fromGPKG {
+		listPoints, srs, xInfo, yInfo = processing.ReadGeoPackage(infile, layer, field, stepX, stepY)
 
-		listPoints, xInfo, yInfo, err = processing.ReadPGData(db, inputQuery, stepX, stepY)
+	} else {
+		srs = gdal.CreateSpatialReference("")
+		err = srs.FromEPSG(epsg)
 		if err != nil {
 			bunyan.Fatal(err)
 		}
-	} else {
 		listPoints, xInfo, yInfo, err = processing.ReadData(infile)
 		if err != nil {
 			bunyan.Fatal(err)
 		}
+	}
+
+	proj, err = srs.ToWKT()
+	if err != nil {
+		bunyan.Fatal(err)
 	}
 
 	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
@@ -116,7 +117,7 @@ func doIDW() {
 
 	for exp := expStart; exp <= expEnd; exp += expIncrement {
 		if !useChunking {
-			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, channel)
+			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, outAscii, outExcel, channel)
 		} else {
 			go idw.ChunkSolve(&data, outfile, xInfo, yInfo, idwChunkY, idwChunkX, proj, exp, channel)
 		}
@@ -128,5 +129,5 @@ func doIDW() {
 	}
 
 	bunyan.Infof("Completed %v iterations in %v", iterations, time.Since(start))
-	bunyan.Infof("Outfiles: %vexp{EXP}.{EXT}", outfile)
+	bunyan.Infof("Outfiles: %vpow{EXP}.{EXT}", outfile)
 }
