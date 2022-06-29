@@ -16,10 +16,10 @@ $$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\s
 <br>
 
 **Read from Geopackage** <br>
-`./main idw -g -f [FILEPATH] --layer [LAYERNAME] --field [FIELDNAME]`
+`./v2r idw -g -f [FILEPATH] --layer [LAYERNAME] --field [FIELDNAME]`
 
 **Read from txt file** <br>
-`./main idw -f [FILEPATH]`
+`./v2r idw -f [FILEPATH]`
 
 **Flags**<br>
 | Shorthand | Full Name     | Type   | Default                          | Description |
@@ -54,8 +54,10 @@ $$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\s
 ## Cleaner
 ![cleaner_before_after](images/cleaner_before_after.png)
 
+This program cleans islands (dry spots) and voids (wet spots) that do not meet the tolerance thresholds.
+
 **Usage**<br>
-`./main clean -f [FILEPATH]`
+`./v2r clean -f [FILEPATH]`
 
 **Flags**<br>
 | Shorthand | Full Name     | Type   | Default      | Description |
@@ -76,7 +78,7 @@ $$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\s
 
 # Testing Suite
 **Usage** <br>
-`./main test`
+`./v2r test`
 
 **Notes** <br>
 - for silent mode, use -e=true, only failed tests will be printed

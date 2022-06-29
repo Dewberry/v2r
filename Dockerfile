@@ -14,4 +14,4 @@ WORKDIR /app
 
 RUN go mod download
 RUN go build main.go
-ENTRYPOINT /root/go/bin/CompileDaemon --build="go build main.go" --command="./main"
+ENTRYPOINT /root/go/bin/CompileDaemon --build="go build main.go" --command="./v2r"

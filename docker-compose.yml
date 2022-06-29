@@ -9,7 +9,7 @@ services:
       - v2r-net
     volumes:
       - ./:/app
-    entrypoint: /root/go/bin/CompileDaemon --build="go build main.go" --command="./main"
+    entrypoint: /root/go/bin/CompileDaemon --build="go build main.go" --command="./v2r"
 
   postgres:
     image: kartoza/postgis:14-3.2
