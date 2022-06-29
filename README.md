@@ -33,10 +33,10 @@ $$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\s
 |           | --epsg        | int    | _2284_                           | Set EPSG |
 |           | --es          | float  | _0.5_                            | Start for exponent (inclusive)  |
 |           | --excel       | bool   | _false_                          | Perform an additional write to excel spreadsheet |
-|           | --field       | string | _elevation_                      | Set name of field in geopackage file  |
-| -f        | --file        | string | _tests/idw_files/idw_in.txt_     | File to run |
+|           | --field       | string |                                  | Set name of field in geopackage file  |
+| -f        | --file        | string | _required_                       | File to run |
 | -g        | --gpkg        | bool   | _false_                          | Read from gpkg (true) or txt file (false)  |
-|           | --layer       | string | _layer1_                         | Set name of layer in geopackage file  |
+|           | --layer       | string |                                  | Set name of layer in geopackage file  |
 |           | --outPath     | string | _data/idw_                       | Set outfile directory  |
 |           | --sx          | float  | _100.0_                          | Set step size in x-direction |
 |           | --sy          | float  | _100.0_                          | Set step size in y-direction |
