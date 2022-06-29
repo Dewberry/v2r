@@ -15,6 +15,7 @@
 # vendor/
 data/
 main
+v2r
 .vscode/
 pg-data/
 *.tiff
