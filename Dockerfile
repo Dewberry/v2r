@@ -13,5 +13,10 @@ COPY ./ /app
 WORKDIR /app
 
 RUN go mod download
-RUN go build main.go
-ENTRYPOINT /root/go/bin/CompileDaemon --build="go build main.go" --command="./v2r"
+RUN go build -o ./v2r main.go
+ENTRYPOINT /root/go/bin/CompileDaemon --build="go build -o ./v2r main.go" --command="./v2r"
+
+FROM osgeo/gdal:alpine-normal-3.4.0 AS prod
+COPY --from=dev /app/v2r /usr/local/bin/v2r
+CMD ["v2r"]
+
