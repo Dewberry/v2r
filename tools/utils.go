@@ -39,9 +39,7 @@ func Transpose(a [][]float64) [][]float64 {
 	}
 
 	return b
-}
-
-//End Basic Utilities
+} //End Basic Utilities
 
 //Start Point/OrderedPair/Coord and helper functions
 type Point struct {
@@ -117,9 +115,7 @@ func MakeCoordSpace(listPoints *[]Point, xInfo Info, yInfo Info) map[OrderedPair
 		seen[pair] = p
 	}
 	return seen
-}
-
-//End Point/OrderedPair/Coord and helper functions
+} //End Point/OrderedPair/Coord and helper functions
 
 // Info Structure
 // For Conversions to and from Euclidean Space
@@ -176,9 +172,7 @@ func CalculateWeight(cell Point, data *[]Point, exp float64) float64 {
 		total += p.Weight / (math.Pow(euclidDist(cell, p), exp))
 	}
 	return math.Pow(total, .5)
-}
-
-// End Math Functions
+} // End Math Functions
 
 //Memory Management
 func ChannelSize(appxSubprocess uint64, appxOverhead uint64) int {

@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	"app/features/cleaner"
-	"app/tools"
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/dewberry/v2r/features/cleaner"
+	"github.com/dewberry/v2r/tools"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/spf13/cobra"
@@ -21,13 +22,13 @@ var (
 	cleanChunkY     int
 )
 
-// cleanCmd represents the clean command
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
 	Short: "Run cleaning algorithm",
 	Long:  `Clean islands/voids on a map if they are below the given threshold.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		bunyan.Info("Cleaner Started")
+		printFlagsCleaner()
 		clean()
 		bunyan.Info("Cleaner Finished")
 	},
@@ -46,6 +47,22 @@ func init() {
 	cleanCmd.Flags().IntVar(&cleanChunkX, "cx", 256*10, "Chunk size in x-direction")
 	cleanCmd.Flags().IntVar(&cleanChunkY, "cy", 256*10, "Chunk size in y-direction")
 
+}
+
+func printFlagsCleaner() {
+	bunyan.Debug("Flags")
+	bunyan.Debug("-----")
+
+	bunyan.Debugf("Filepath: %v", filepath)
+	bunyan.Debugf("Concurrent: %v", useChunk)
+	if useChunk {
+		bunyan.Debugf("Partition (x-direction): %v", cleanChunkX)
+		bunyan.Debugf("Partition (y-direction): %v", cleanChunkY)
+	}
+	bunyan.Debugf("Adjacency Type: d%v", adjType)
+	bunyan.Debugf("Tolerance (Island): %.1f", toleranceIsland)
+	bunyan.Debugf("Tolerance (Void): %.1f", toleranceVoid)
+	bunyan.Debug("-----")
 }
 
 func clean() {

@@ -1,10 +1,11 @@
 package idw
 
 import (
-	"app/tools"
-	processing "app/tools/processing"
 	"fmt"
 	"time"
+
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
@@ -32,7 +33,6 @@ func makeGridIDW(jobs chan chunkJob, channel chan chunkIDW) {
 			grid[r-rStart] = make([]float64, cEnd-cStart)
 			for c := cStart; c < cEnd; c++ {
 				grid[r-rStart][c-cStart] = calculateIDW(j.locs, j.xInfo, j.yInfo, j.exp, r, c).Weight
-				// calculateIDW(locs, xInfo, yInfo, &grid[r-rStart][c-cStart], exp, r, c)
 			}
 		}
 
@@ -68,7 +68,6 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	}
 	for r := 0; r < numRows; r += chunkR {
 		for c := 0; c < numCols; c += chunkC {
-			// fmt.Println(tools.RCToPair(r, c), tools.RCToPair(tools.Min(r+chunkR, numRows), tools.Min(c+chunkC, numCols)))
 			job := chunkJob{data, xInfo, yInfo, tools.RCToPair(r, c), tools.RCToPair(tools.Min(r+chunkR, numRows), tools.Min(c+chunkC, numCols)), pow}
 			jobs <- job
 		}
@@ -83,7 +82,6 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 	for i := 0; i < totalChunks; i++ {
 		start := time.Now()
 		chunk := <-chunkChannel
-		// fmt.Println(chunk)
 		received := time.Now()
 
 		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)

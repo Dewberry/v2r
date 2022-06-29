@@ -1,9 +1,10 @@
 package cleaner
 
 import (
-	"app/tools"
-	processing "app/tools/processing"
 	"math"
+
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
@@ -115,7 +116,7 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	bunyan.Infof("[%v, %v]", len(areaMap), len(areaMap[0]))
 
 	if err != nil {
-		return err
+		bunyan.Fatal(err)
 	}
 	areaSize := math.Abs(gdal.XCell * gdal.YCell)
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}

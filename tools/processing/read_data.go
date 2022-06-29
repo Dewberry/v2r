@@ -1,7 +1,6 @@
 package processing
 
 import (
-	"app/tools"
 	"bufio"
 	"errors"
 	"math"
@@ -11,6 +10,7 @@ import (
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/dewberry/gdal"
+	"github.com/dewberry/v2r/tools"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -18,7 +18,7 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 	file, err := os.Open(filepath)
 
 	if err != nil {
-		return []tools.Point{}, tools.Info{}, tools.Info{}, err
+		bunyan.Fatal(err)
 	}
 	defer file.Close()
 
@@ -35,11 +35,11 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 			fields := strings.Fields(sc.Text())
 			xInfo.Step, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
 			if err != nil {
-				return []tools.Point{}, tools.Info{}, tools.Info{}, err
+				bunyan.Fatal(err)
 			}
 			yInfo.Step, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
 			if err != nil {
-				return []tools.Point{}, tools.Info{}, tools.Info{}, err
+				bunyan.Fatal(err)
 			}
 
 		case "ESTIMATE":
@@ -66,12 +66,15 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 					}
 				}
 			}
-			// fmt.Println("reading in", "X:", xInfo, "\ty:", yInfo)
 			return data, xInfo, yInfo, nil
 
 		}
 
 	}
+
+	bunyan.Debug("xInfo", xInfo)
+	bunyan.Debug("yInfo", yInfo)
+	bunyan.Debug(data)
 	return data, xInfo, yInfo, errors.New("ESTIMATE not in file")
 }
 
@@ -90,21 +93,16 @@ func addPoints(sc *bufio.Scanner) []tools.Point {
 		p.Y, _ = strconv.ParseFloat(fields[1], 64)
 		p.Weight, _ = strconv.ParseFloat(fields[2], 64)
 
-		// fmt.Println(p)
-
 		data = append(data, p)
 
 	}
 	return data
 }
 
-// Reads Database into a list of points
-// Stores min and max x, y values
-// Configures globals (min/max x, y)
 func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tools.Point, tools.Info, tools.Info, error) {
 	rows, err := db.Query(query)
 	if err != nil {
-		return []tools.Point{}, tools.Info{}, tools.Info{}, err
+		bunyan.Fatal(err)
 	}
 
 	var listPoints []tools.Point
@@ -118,7 +116,7 @@ func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tool
 
 		err = rows.Scan(&elev, &x, &y)
 		if err != nil {
-			return []tools.Point{}, tools.Info{}, tools.Info{}, err
+			bunyan.Fatal(err)
 		}
 
 		xInfo.Min = math.Min(xInfo.Min, x)
@@ -129,6 +127,10 @@ func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tool
 
 		listPoints = append(listPoints, tools.MakePoint(x, y, elev))
 	}
+
+	bunyan.Debug("xInfo", xInfo)
+	bunyan.Debug("yInfo", yInfo)
+	bunyan.Debug(listPoints)
 
 	return listPoints, xInfo, yInfo, nil
 }

@@ -1,13 +1,12 @@
 package cmd
 
 import (
-	"app/tests"
+	"github.com/dewberry/v2r/tests"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/spf13/cobra"
 )
 
-// cleanCmd represents the clean command
 var testCmd = &cobra.Command{
 	Use:   "test",
 	Short: "Run test suite",

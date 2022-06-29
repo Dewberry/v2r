@@ -1,8 +1,8 @@
 package cleaner
 
 import (
-	"app/tools"
-	processing "app/tools/processing"
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
@@ -67,7 +67,7 @@ func AdjacentVectors(adjType int) []tools.OrderedPair {
 func readFileChunk(filepath string, start tools.OrderedPair, size tools.OrderedPair) ([][]square, error) {
 	flattenedMap, _, _, err := processing.ReadGDAL(filepath, start, size, false)
 	if err != nil {
-		return [][]square{}, err
+		bunyan.Fatal(err)
 	}
 
 	return createAreaMap(flattenedMap, size), nil
@@ -76,7 +76,7 @@ func readFileChunk(filepath string, start tools.OrderedPair, size tools.OrderedP
 func readFile(filepath string) ([][]square, processing.GDalInfo, error) {
 	flattenedMap, gdal, rowsAndCols, err := processing.ReadGDAL(filepath, tools.MakePair(0, 0), tools.MakePair(0, 0), true)
 	if err != nil {
-		return [][]square{}, processing.GDalInfo{}, err
+		bunyan.Fatal(err)
 	}
 
 	return createAreaMap(flattenedMap, rowsAndCols), gdal, nil

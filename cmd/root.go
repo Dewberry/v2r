@@ -1,8 +1,7 @@
 package cmd
 
 import (
-	"app/tools"
-	"os"
+	"github.com/dewberry/v2r/tools"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/spf13/cobra"
@@ -23,7 +22,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		os.Exit(1)
+		bunyan.Fatal(err)
 	}
 }
 

@@ -1,18 +1,12 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
-
-	// "app/features/idw"
-
-	"app/features/idw"
-	"app/tools"
-	"app/tools/processing"
 	"fmt"
 	"time"
+
+	"github.com/dewberry/v2r/features/idw"
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/dewberry/gdal"
@@ -38,13 +32,13 @@ var (
 	outfileFolder string
 )
 
-// idwCmd represents the idw command
 var idwCmd = &cobra.Command{
 	Use:   "idw",
 	Short: "Run Inverse Distance Weighting algorithm ",
 	Long:  `Run Inverse Distance Weighting for multivariate interpolation given a set of points that contain (x, y, elevation).  `,
 	Run: func(cmd *cobra.Command, args []string) {
 		bunyan.Info("IDW Started")
+		printFlagsIDW()
 		doIDW()
 		bunyan.Info("IDW Finished")
 	},
@@ -52,6 +46,8 @@ var idwCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(idwCmd)
+
+	cobra.OnInitialize(reqFlagsIDW)
 
 	idwCmd.Flags().BoolVarP(&fromGPKG, "gpkg", "g", false, "Read from gpkg (true) or from txt file (false)")
 	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", false, "Run program concurrently (true) or serially (false)")
@@ -70,8 +66,46 @@ func init() {
 
 	idwCmd.Flags().StringVarP(&infile, "file", "f", "", "Set filepath (required)")
 	idwCmd.Flags().StringVar(&outfileFolder, "outPath", "data/idw/", "Set outfile location")
-	idwCmd.Flags().StringVar(&layer, "layer", "layer1", "Set name of layer in geopackage file")
-	idwCmd.Flags().StringVar(&field, "field", "elevation", "Set name of field in geopackage file")
+
+	idwCmd.Flags().StringVar(&layer, "layer", "", "Set name of layer in geopackage file (*)")
+	idwCmd.Flags().StringVar(&field, "field", "", "Set name of field in geopackage file (*)")
+
+}
+
+func reqFlagsIDW() {
+	if fromGPKG {
+		bunyan.Debug("here)")
+		idwCmd.MarkFlagRequired("layer")
+		idwCmd.MarkFlagRequired("field")
+	}
+}
+
+func printFlagsIDW() {
+	bunyan.Debug("Flags")
+	bunyan.Debug("-----")
+
+	bunyan.Debugf("Filepath: %v", infile)
+	bunyan.Debugf("Outfile folder: %v", outfileFolder)
+	bunyan.Debugf("Concurrent: %v", useChunking)
+	if useChunk {
+		bunyan.Debugf("Partition (x-direction): %v", idwChunkX)
+		bunyan.Debugf("Partition (y-direction): %v", idwChunkY)
+	} else {
+		bunyan.Debugf("Print to ascii: %v", outAscii)
+		bunyan.Debugf("Print to excel: %v", outExcel)
+	}
+	bunyan.Debugf("From GPKG: %v", fromGPKG)
+	if fromGPKG {
+		bunyan.Debugf("Layer name: %v", layer)
+		bunyan.Debugf("Field name: %v", field)
+	} else {
+		bunyan.Debugf("used epsg = %v on text file", epsg)
+	}
+	bunyan.Debugf("Step size in x-direction: %v", stepX)
+	bunyan.Debugf("Step size in y-direction: %v", stepY)
+	bunyan.Debugf("Exponent: [%v, %v]   Step size: %v", expStart, expEnd, expIncrement)
+	bunyan.Debug("-----")
+
 }
 
 func doIDW() {
@@ -105,6 +139,7 @@ func doIDW() {
 	if err != nil {
 		bunyan.Fatal(err)
 	}
+	bunyan.Debug("projection", proj)
 
 	data := tools.MakeCoordSpace(&listPoints, xInfo, yInfo)
 	chunkString := ""

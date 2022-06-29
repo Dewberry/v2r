@@ -1,11 +1,12 @@
 package processing
 
 import (
-	"app/tools"
 	"bufio"
 	"fmt"
-	"log"
 	"os"
+
+	bunyan "github.com/Dewberry/paul-bunyan"
+	"github.com/dewberry/v2r/tools"
 )
 
 func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools.Info, pow float64, chunkR int, chunkC int) error {
@@ -30,7 +31,7 @@ func PrintAscii(grid [][]float64, filepath string, xInfo tools.Info, yInfo tools
 	for _, line := range header {
 		_, err := writer.WriteString(line)
 		if err != nil {
-			log.Fatalf("Got error while writing to a file. Err: %s", err.Error())
+			bunyan.Fatalf("Got error while writing to a file. Err: %s", err.Error())
 		}
 	}
 

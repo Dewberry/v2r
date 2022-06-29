@@ -36,7 +36,6 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	endrow := len(grid)
 
 	for i, row := range grid {
-		// go printRowHelper(file, sheetname, fmt.Sprintf("A%v", i+1), fmt.Sprintf("B%v", len(grid)-i), i+1, MAX[1]-i, row, 25)
 		file.SetCellValue(sheetname, fmt.Sprintf("A%v", i+1), len(grid)-i-1) // y-axis
 		file.SetSheetRow(sheetname, fmt.Sprintf("B%v", len(grid)-i), &row)
 		file.SetRowHeight(sheetname, i+1, 25)
@@ -52,11 +51,11 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	style, err := file.NewStyle(&excelize.Style{DecimalPlaces: 1})
 
 	if err != nil {
-		return err
+		bunyan.Fatal(err)
 	}
 	err = file.SetCellStyle(sheetname, "A1", fmt.Sprintf("%s%v", endcol, endrow), style)
 	if err != nil {
-		return err
+		bunyan.Fatal(err)
 	}
 
 	file.SetConditionalFormat(sheetname, fmt.Sprintf("B1:%s%v", GetExcelColumn(len(grid[0])), len(grid)), `[

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"app/cmd"
+	"github.com/dewberry/v2r/cmd"
 )
 
 func main() {

@@ -1,10 +1,11 @@
 package idw
 
 import (
-	"app/tools"
-	"app/tools/processing"
 	"fmt"
 	"time"
+
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
@@ -24,7 +25,6 @@ func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 		grid[r] = make([]float64, totalSize.C)
 		for c := 0; c < totalSize.C; c++ {
 			grid[r][c] = calculateIDW(data, xInfo, yInfo, pow, r, c).Weight
-			// calculateIDW(locs, xInfo, yInfo, &grid[r-rStart][c-cStart], exp, r, c)
 		}
 	}
 	toPrint := chunkIDW{tools.MakePair(0, 0), grid}

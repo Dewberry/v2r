@@ -1,10 +1,11 @@
 package idw
 
 import (
-	"app/tools"
-	processing "app/tools/processing"
 	"fmt"
 	"os"
+
+	"github.com/dewberry/v2r/tools"
+	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
@@ -17,7 +18,6 @@ func calculateIDW(locs *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yIn
 	givenPoint, exists := (*locs)[tools.RCToPair(r, c)]
 	if exists {
 		return givenPoint
-		// *newWeight = givenPoint.Weight
 	}
 
 	for _, pointValue := range getInBounds(p0, locs) {
@@ -28,11 +28,9 @@ func calculateIDW(locs *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yIn
 
 	}
 	p0.Weight /= denom
-	// *newWeight = p0.Weight
 	return p0
 }
 
-//Later feature for a bounding method
 func getInBounds(p tools.Point, data *map[tools.OrderedPair]tools.Point) map[tools.OrderedPair]tools.Point {
 	return *data
 }

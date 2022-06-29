@@ -5,18 +5,15 @@ import (
 	"os"
 	"strings"
 
-	cleaner "app/features/cleaner"
-	tools "app/tools"
-	processing "app/tools/processing"
+	cleaner "github.com/dewberry/v2r/features/cleaner"
+	tools "github.com/dewberry/v2r/tools"
+	processing "github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
 func testCleaner() bool {
-	filepath := "tests/cleaner_files/clean_in.asc" // passed through
-	// toleranceIsland := 40000.0 // standard tolerance
-	// toleranceVoid := 22500.0   // standard tolerance
-	// useChunk := false
+	filepath := "tests/cleaner_files/clean_in.asc"
 	toleranceVoid := 2.0 // test smaller datasets
 	chunkx := 2
 	chunky := 3

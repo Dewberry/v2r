@@ -1,7 +1,7 @@
 package cleaner
 
 import (
-	"app/tools"
+	"github.com/dewberry/v2r/tools"
 )
 
 type blob struct {
@@ -49,15 +49,6 @@ func setWet(areaMap *[][]square, loc tools.OrderedPair, wet byte) {
 func sameBlob(areaMap *[][]square, loc1 tools.OrderedPair, loc2 tools.OrderedPair) bool {
 	return getSquarePair(areaMap, loc1).IsWater == getSquarePair(areaMap, loc2).IsWater
 }
-
-// length of Elements list unless fixed > 0
-// then return fixed
-// func getNumElements(b *blob) int {
-// 	if b.NumFixed > 0 {
-// 		return b.NumFixed
-// 	}
-// 	return len(b.Elements)
-// }
 
 func isBigBlob(b *blob) bool {
 	return b.NumFixed > 0
