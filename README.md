@@ -12,7 +12,7 @@ v2r contains two algorithms with an associated testing suite.
 The interpolation becomes more drastic as _p_ increases.
 
 ### **Equation** <br>
-$$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\sum_{i=1}^{n} (\frac {1}{d_i^p})}$$
+$z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\sum_{i=1}^{n} (\frac {1}{d_i^p})}$
 <br>
 
 **Read from Geopackage** <br>
@@ -78,10 +78,24 @@ This program cleans islands (dry spots) and voids (wet spots) that do not meet t
 
 # Testing Suite
 **Usage** <br>
-`./v2r test`
+`go test ./...`
+
+**Run Specific Test** <br>
+`go test ./features/idw`
+
+**Test Locations** <br>
+- features/idw
+    - subtest name: "{ Serial | Conc }_step{ 1-1 | 2-2 }"
+- features/cleaner
+    - subtest name: "{ Serial | Conc }_T{ 4 | 9 }_A{ 4 | 8}"
+    - "T" is for tolerance island threshold
+    - "A" is for adjacency type
+- tools/processing
+    - subtest name: "{ data | srs | xInfo | yInfo }"
+    - tests geopackage reader
 
 **Notes** <br>
-- for silent mode, use -e=true, only failed tests will be printed
+
 - outputs ascii files to compare against correct outputs
 
 # Logging

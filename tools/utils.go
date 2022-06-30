@@ -9,6 +9,7 @@ import (
 	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/natefinch/lumberjack"
 	"github.com/pbnjay/memory"
+	"github.com/udhos/equalfile"
 )
 
 //Start Basic Utilites
@@ -205,4 +206,14 @@ func SetLogging() {
 		MaxAge:     90,   //days
 		Compress:   true, // disabled by default
 	})
+}
+
+func SameFiles(f1, f2 string) bool {
+	cmp := equalfile.New(nil, equalfile.Options{})
+	equal, err := cmp.CompareFile(f1, f2)
+	if err != nil {
+		bunyan.Fatal(err)
+	}
+
+	return equal
 }
