@@ -84,7 +84,10 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 		chunk := <-chunkChannel
 		received := time.Now()
 
-		writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
+		err := writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
+		if err != nil {
+			return err
+		}
 
 		if (i+1)%progress == 0 {
 			bunyan.Infof("~%d%%, %v / %v", 100*(i+1)/totalChunks, i+1, totalChunks)

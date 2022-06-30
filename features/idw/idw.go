@@ -29,14 +29,23 @@ func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 	}
 	toPrint := chunkIDW{tools.MakePair(0, 0), grid}
 	outfile = fmt.Sprintf("%spow%.1f", outfile, pow)
-	writeTif(toPrint, outfile, gdal, totalSize, 0)
+	err := writeTif(toPrint, outfile, gdal, totalSize, 0)
+	if err != nil {
+		return err
+	}
 	if ascii {
 		bunyan.Debug("ascii write")
-		processing.TransferType(outfile+".tiff", outfile+".asc", "Int32") // for ascii output
+		err := processing.TransferType(outfile+".tiff", outfile+".asc", "Int32") // for ascii output
+		if err != nil {
+			return err
+		}
 	}
 	if excel {
 		bunyan.Debug("excel write")
-		processing.PrintExcel(grid, outfile, pow)
+		err := processing.PrintExcel(grid, outfile, pow)
+		if err != nil {
+			return err
+		}
 	}
 
 	channel <- fmt.Sprintf("pow%v [%vX%v] completed in %v", pow, numRows, numCols, time.Since(start))

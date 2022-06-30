@@ -84,7 +84,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 	gdal, rowsAndCols, err := processing.GetInfoGDAL(filepath)
 	bunyan.Infof("img rows x cols: %v", rowsAndCols)
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
 
 	areaSize := math.Abs(gdal.XCell * gdal.YCell)
@@ -131,7 +131,7 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 
 		err = processing.WriteTif(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, j == 0)
 		if err != nil {
-			bunyan.Fatal(err)
+			return err
 		}
 		if (j+1)%progress == 0 {
 			bunyan.Infof("~%d%%, %v / %v", 100*(j+1)/totalChunks, j+1, totalChunks)

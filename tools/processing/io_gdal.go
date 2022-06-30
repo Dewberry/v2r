@@ -39,7 +39,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 		bunyan.Debug("Creating Raster")
 		driver, err := gdal.GetDriverByName(driver)
 		if err != nil {
-			bunyan.Fatal(err)
+			return err
 		}
 		bunyan.Debug("Creating Dataset")
 		dataset = driver.Create(filename, totalSize.C, totalSize.R, 1, GDINFO.GDalDataType, []string{"BIGTIFF=YES"})
@@ -53,7 +53,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 		var err error
 		dataset, err = gdal.Open(filename, gdal.Update)
 		if err != nil {
-			bunyan.Fatal(err)
+			return err
 		}
 
 		defer dataset.Close()
@@ -67,7 +67,7 @@ func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, dr
 func ReadGDAL(filepath string, offsets tools.OrderedPair, size tools.OrderedPair, entireFile bool) ([]byte, GDalInfo, tools.OrderedPair, error) {
 	DS, err := gdal.Open(filepath, gdal.ReadOnly)
 	if err != nil {
-		bunyan.Fatal(err)
+		return []byte{}, GDalInfo{}, tools.OrderedPair{}, err
 	}
 	if entireFile {
 		size = tools.MakePair(DS.RasterYSize(), DS.RasterXSize())
@@ -82,7 +82,7 @@ func ReadGDAL(filepath string, offsets tools.OrderedPair, size tools.OrderedPair
 	data := make([]byte, size.C*size.R)
 	err = band.IO(gdal.Read, offsets.C, offsets.R, size.C, size.R, data, size.C, size.R, 0, 0)
 	if err != nil {
-		bunyan.Fatal(err)
+		return []byte{}, GDalInfo{}, tools.OrderedPair{}, err
 	}
 
 	return data, gdReturn, size, nil
@@ -91,7 +91,7 @@ func ReadGDAL(filepath string, offsets tools.OrderedPair, size tools.OrderedPair
 func GetInfoGDAL(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	DS, err := gdal.Open(filepath, gdal.ReadOnly)
 	if err != nil {
-		bunyan.Fatal(err)
+		return GDalInfo{}, tools.OrderedPair{}, err
 	}
 
 	numCols := DS.RasterXSize()
@@ -103,10 +103,10 @@ func GetInfoGDAL(filepath string) (GDalInfo, tools.OrderedPair, error) {
 	return gdReturn, tools.MakePair(numRows, numCols), nil
 }
 
-func TransferType(src string, dst string, outputType string) {
+func TransferType(src string, dst string, outputType string) error {
 	DS, err := gdal.Open(src, gdal.ReadOnly)
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
 
 	opts := []string{"-ot", outputType}
@@ -117,40 +117,44 @@ func TransferType(src string, dst string, outputType string) {
 	}
 	_, err = gdal.Translate(dst, DS, opts)
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
+	return nil
 }
 
-func validGPKGLayer(filepath string, layer string) {
+func validGPKGLayer(filepath string, layer string) error {
 	ds := gdal.OpenDataSource(filepath, int(gdal.ReadOnly))
 	defer ds.Destroy()
 
 	allLayers := make([]string, 0, ds.LayerCount())
 	for i := 0; i < ds.LayerCount(); i++ {
 		if ds.LayerByIndex(i).Name() == layer {
-			return
+			return nil
 		}
 		allLayers = append(allLayers, ds.LayerByIndex(i).Name())
 	}
-	bunyan.Fatalf("Invalid Layer: %v  | %v Possible Layers: %v", layer, len(allLayers), allLayers)
+	return fmt.Errorf("Invalid Layer: %v  | %v Possible Layers: %v", layer, len(allLayers), allLayers)
 }
 
-func getFieldIndex(fieldDef gdal.FeatureDefinition, field string) int {
+func getFieldIndex(fieldDef gdal.FeatureDefinition, field string) (int, error) {
 	ind := fieldDef.FieldIndex(field)
-	if ind != -1 {
-		return ind
+	if ind >= 0 {
+		return ind, nil
 	}
 	allFields := make([]string, 0, fieldDef.FieldCount())
 	for i := 0; i < fieldDef.FieldCount(); i++ {
 		allFields = append(allFields, fieldDef.FieldDefinition(i).Name())
 	}
-	bunyan.Fatalf("Invalid Field: %v  | %v Possible Fields: %v", field, len(allFields), allFields)
-	return -1
+
+	return -1, fmt.Errorf("Invalid Field: %v  | %v Possible Fields: %v", field, len(allFields), allFields)
 }
 
-func getGPKGPoints(filepath string, layer string, field string) ([]tools.Point, gdal.SpatialReference) {
+func getGPKGPoints(filepath string, layer string, field string) ([]tools.Point, string, error) {
 	bunyan.Debugf("%s %s %s", filepath, layer, field)
-	validGPKGLayer(filepath, layer)
+	err := validGPKGLayer(filepath, layer)
+	if err != nil {
+		return []tools.Point{}, "", err
+	}
 
 	ds := gdal.OpenDataSource(filepath, int(gdal.ReadOnly))
 	defer ds.Destroy()
@@ -160,7 +164,10 @@ func getGPKGPoints(filepath string, layer string, field string) ([]tools.Point, 
 
 	fieldDef := l.Definition()
 
-	fieldIndex := getFieldIndex(fieldDef, field)
+	fieldIndex, err := getFieldIndex(fieldDef, field)
+	if err != nil {
+		return []tools.Point{}, "", err
+	}
 	bunyan.Debug("field index", fieldIndex)
 
 	count, _ := l.FeatureCount(true)
@@ -172,5 +179,10 @@ func getGPKGPoints(filepath string, layer string, field string) ([]tools.Point, 
 		pointList = append(pointList, tools.MakePoint(geom.X(0), geom.Y(0), feature.FieldAsFloat64(fieldIndex)))
 	}
 
-	return pointList, l.SpatialReference()
+	proj, err := l.SpatialReference().ToWKT()
+	if err != nil {
+		return []tools.Point{}, "", err
+	}
+
+	return pointList, proj, nil
 }

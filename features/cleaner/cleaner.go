@@ -116,7 +116,7 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	bunyan.Infof("[%v, %v]", len(areaMap), len(areaMap[0]))
 
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
 	areaSize := math.Abs(gdal.XCell * gdal.YCell)
 	tolerance := map[byte]int{0: int(toleranceIsland / areaSize), 1: int(toleranceVoid / areaSize)}

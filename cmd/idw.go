@@ -9,7 +9,6 @@ import (
 	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
-	"github.com/dewberry/gdal"
 	"github.com/spf13/cobra"
 )
 
@@ -115,29 +114,21 @@ func doIDW() {
 		listPoints []tools.Point
 		xInfo      tools.Info
 		yInfo      tools.Info
-		srs        gdal.SpatialReference
 		proj       string
 		err        error
 	)
 
 	if fromGPKG {
-		listPoints, srs, xInfo, yInfo = processing.ReadGeoPackage(infile, layer, field, stepX, stepY)
+		listPoints, proj, xInfo, yInfo, err = processing.ReadGeoPackage(infile, layer, field, stepX, stepY)
+		if err != nil {
+			bunyan.Fatal(err)
+		}
 
 	} else {
-		srs = gdal.CreateSpatialReference("")
-		err = srs.FromEPSG(epsg)
+		listPoints, proj, xInfo, yInfo, err = processing.ReadTextData(infile, epsg)
 		if err != nil {
 			bunyan.Fatal(err)
 		}
-		listPoints, xInfo, yInfo, err = processing.ReadData(infile)
-		if err != nil {
-			bunyan.Fatal(err)
-		}
-	}
-
-	proj, err = srs.ToWKT()
-	if err != nil {
-		bunyan.Fatal(err)
 	}
 	bunyan.Debug("projection", proj)
 

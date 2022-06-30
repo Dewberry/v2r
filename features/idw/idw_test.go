@@ -9,7 +9,6 @@ import (
 	"github.com/dewberry/v2r/tools/processing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
-	"github.com/dewberry/gdal"
 )
 
 func TestIDW(t *testing.T) {
@@ -17,19 +16,8 @@ func TestIDW(t *testing.T) {
 	bunyan.Info("IDW")
 	epsg := 2284
 
-	srs := gdal.CreateSpatialReference("")
-	err := srs.FromEPSG(epsg)
-	if err != nil {
-		t.Error(err)
-	}
-	proj, err := srs.ToWKT()
-	if err != nil {
-		bunyan.Error(err)
-		t.Error(err)
-	}
-
 	filepath := "idw_test_files/idw_in.txt"
-	listPoints, xInfo, yInfo, err := processing.ReadData(filepath)
+	listPoints, proj, xInfo, yInfo, err := processing.ReadTextData(filepath, epsg)
 	if err != nil {
 		t.Error(err)
 	}

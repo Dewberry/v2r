@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
-	"github.com/dewberry/gdal"
 	"github.com/dewberry/v2r/tools"
 )
 
@@ -46,7 +45,7 @@ func isListCorrect(listPoints []tools.Point) bool {
 	return true
 }
 
-func correctSRS(srs gdal.SpatialReference, folder string) bool {
+func correctSRS(proj string, folder string) bool {
 	filename := folder + "gpkg_proj.txt"
 	f, err := os.Open(filename)
 	if err != nil {
@@ -58,12 +57,7 @@ func correctSRS(srs gdal.SpatialReference, folder string) bool {
 
 	sc.Scan()
 	correctProj := sc.Text()
-	createdProj, err := srs.ToWKT()
-	if err != nil {
-		bunyan.Error("error in srs to wkt")
-		return false
-	}
-	return correctProj == createdProj
+	return correctProj == proj
 }
 
 func correctXInfo(xInfo tools.Info) bool {
@@ -82,9 +76,12 @@ func TestGPKGRead(t *testing.T) {
 	filepath := dataFolder + "input.gpkg"
 	bunyan.Debug("filepath ", filepath)
 
-	listPoints, srs, xInfo, yInfo := ReadGeoPackage(filepath, "wsels", "elevation", 1.0, 2.0)
+	listPoints, proj, xInfo, yInfo, err := ReadGeoPackage(filepath, "wsels", "elevation", 1.0, 2.0)
+	if err != nil {
+		t.Error(err)
+	}
 	bunyan.Debug("listPoints ", listPoints)
-	bunyan.Debug("srs", srs)
+	bunyan.Debug("proj", proj)
 	bunyan.Debug("xInfo", xInfo)
 	bunyan.Debug("yInfo", yInfo)
 
@@ -93,8 +90,8 @@ func TestGPKGRead(t *testing.T) {
 			t.Error("points generated from geopackage incorrect")
 		}
 	})
-	t.Run("srs", func(t *testing.T) {
-		if !correctSRS(srs, dataFolder) {
+	t.Run("proj", func(t *testing.T) {
+		if !correctSRS(proj, dataFolder) {
 			t.Error("srs generated from geopackage incorrect")
 		}
 	})

@@ -51,11 +51,11 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	style, err := file.NewStyle(&excelize.Style{DecimalPlaces: 1})
 
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
 	err = file.SetCellStyle(sheetname, "A1", fmt.Sprintf("%s%v", endcol, endrow), style)
 	if err != nil {
-		bunyan.Fatal(err)
+		return err
 	}
 
 	file.SetConditionalFormat(sheetname, fmt.Sprintf("B1:%s%v", GetExcelColumn(len(grid[0])), len(grid)), `[

@@ -45,13 +45,15 @@ func cleanerTestHelper(toleranceIsland float64, adjType int, chunk bool) bool {
 		outfile += "chunked"
 		err := CleanWithChunking(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
 		if err != nil {
-			bunyan.Fatal(err)
+			bunyan.Error("CleanWithChunking() error")
+			return false
 		}
 	} else {
 		chunkString = "NO "
 		err := CleanFull(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
 		if err != nil {
-			bunyan.Fatal(err)
+			bunyan.Error("CleanFull() error")
+			return false
 		}
 	}
 

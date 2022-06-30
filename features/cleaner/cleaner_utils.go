@@ -67,7 +67,7 @@ func AdjacentVectors(adjType int) []tools.OrderedPair {
 func readFileChunk(filepath string, start tools.OrderedPair, size tools.OrderedPair) ([][]square, error) {
 	flattenedMap, _, _, err := processing.ReadGDAL(filepath, start, size, false)
 	if err != nil {
-		bunyan.Fatal(err)
+		return [][]square{}, err
 	}
 
 	return createAreaMap(flattenedMap, size), nil
@@ -76,7 +76,7 @@ func readFileChunk(filepath string, start tools.OrderedPair, size tools.OrderedP
 func readFile(filepath string) ([][]square, processing.GDalInfo, error) {
 	flattenedMap, gdal, rowsAndCols, err := processing.ReadGDAL(filepath, tools.MakePair(0, 0), tools.MakePair(0, 0), true)
 	if err != nil {
-		bunyan.Fatal(err)
+		return [][]square{}, processing.GDalInfo{}, err
 	}
 
 	return createAreaMap(flattenedMap, rowsAndCols), gdal, nil

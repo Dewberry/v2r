@@ -6,8 +6,6 @@ import (
 
 	"github.com/dewberry/v2r/tools"
 	"github.com/dewberry/v2r/tools/processing"
-
-	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
 func calculateIDW(locs *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yInfo tools.Info, exp float64, r int, c int) tools.Point {
@@ -46,31 +44,25 @@ func flattenGrid(grid [][]float64) []float64 {
 	return unwrappedMatrix
 }
 
-func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) {
+func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) error {
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-	err := processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
-	if err != nil {
-		bunyan.Fatal("tif", err)
-	}
+	return processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
 }
 
-func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) {
+func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) error {
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
 
 	emptyFile, err := os.Create(fmt.Sprintf("%s.asc", filename))
 	if err != nil {
-		bunyan.Fatal("asc", err)
+		return err
 	}
 	emptyFile.Close()
 
-	err = processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, false)
-	if err != nil {
-		bunyan.Fatal("asc", err)
-	}
+	return processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, false)
 }
 
 func getChannelSize(chunkSize int) int {
