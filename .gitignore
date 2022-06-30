@@ -24,3 +24,4 @@ pg-data/
 *.prj
 *.txt
 logs
+*.gpkg
