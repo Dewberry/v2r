@@ -66,7 +66,10 @@ func idwTestHelper(data *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yI
 	}
 
 	//File Comparison
-	isCorrect := tools.SameFiles(outfile+".asc", correctFP+".asc")
+	isCorrect, err := tools.SameFiles(outfile+".asc", correctFP+".asc")
+	if err != nil {
+		bunyan.Fatal(err)
+	}
 	bunyan.Infof("     %sCHUNKING: %s     %v", chunkString, outfile+".asc", isCorrect)
 	if !isCorrect {
 		bunyan.Errorf("FILE: %s  |  Correct: %s", outfile+".asc", correctFP+".asc")

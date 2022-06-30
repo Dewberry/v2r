@@ -4,17 +4,16 @@ import (
 	"fmt"
 	"strings"
 
-	bunyan "github.com/Dewberry/paul-bunyan"
 	"github.com/xuri/excelize/v2"
 )
 
-func GetExcelColumn(i int) string {
+func GetExcelColumn(i int) (string, error) {
 	i++ // 1-indexed
 	endcol, err := excelize.CoordinatesToCellName(i, 1)
 	if err != nil {
-		bunyan.Fatal(err)
+		return "", err
 	}
-	return strings.TrimRight(endcol, "1")
+	return strings.TrimRight(endcol, "1"), nil
 
 }
 
@@ -32,7 +31,11 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 		file.NewSheet(sheetname)
 	}
 
-	endcol := GetExcelColumn(len(grid[0]))
+	endcol, err := GetExcelColumn(len(grid[0]))
+	if err != nil {
+		return err
+	}
+
 	endrow := len(grid)
 
 	for i, row := range grid {
@@ -44,7 +47,11 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 	file.SetRowHeight(sheetname, endrow+1, 25)
 
 	for i := 0; i < len(grid[0]); i++ {
-		file.SetCellValue(sheetname, fmt.Sprintf("%s%v", GetExcelColumn(i+1), len(grid)+1), i) // x-axis
+		col, err := GetExcelColumn(i + 1)
+		if err != nil {
+			return err
+		}
+		file.SetCellValue(sheetname, fmt.Sprintf("%s%v", col, len(grid)+1), i) // x-axis
 	}
 	file.SetColWidth(sheetname, "A", endcol, 5)
 
@@ -58,7 +65,11 @@ func PrintExcel(grid [][]float64, filepath string, pow float64) error {
 		return err
 	}
 
-	file.SetConditionalFormat(sheetname, fmt.Sprintf("B1:%s%v", GetExcelColumn(len(grid[0])), len(grid)), `[
+	col, err := GetExcelColumn(len(grid[0]))
+	if err != nil {
+		return err
+	}
+	file.SetConditionalFormat(sheetname, fmt.Sprintf("B1:%s%v", col, len(grid)), `[
 		{
 			"type": "3_color_scale",
 			"criteria": "=",

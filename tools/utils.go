@@ -208,12 +208,12 @@ func SetLogging() {
 	})
 }
 
-func SameFiles(f1, f2 string) bool {
+func SameFiles(f1, f2 string) (bool, error) {
 	cmp := equalfile.New(nil, equalfile.Options{})
 	equal, err := cmp.CompareFile(f1, f2)
 	if err != nil {
-		bunyan.Fatal(err)
+		return false, err
 	}
 
-	return equal
+	return equal, nil
 }
