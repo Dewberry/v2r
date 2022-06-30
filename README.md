@@ -42,7 +42,7 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 |           | --sy          | float  | _100.0_                          | Set step size in y-direction |
 
 **Notes**
-- txt file input requires special formatting (example [idw_in.txt](tests/idw_files/idw_in.txt))
+- txt file input requires special formatting (example [idw_in.txt](features/idw/idw_test_files/idw_in.txt))
 - cx, cy only used if --concurrent=true
 - invalid chunk sizes are converted to 1/4 of respective direction (~16 subprocesses)
 - epsg only used if --gpkg=false
