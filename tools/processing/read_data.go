@@ -2,7 +2,7 @@ package processing
 
 import (
 	"bufio"
-	"errors"
+	"fmt"
 	"math"
 	"os"
 	"strconv"
@@ -14,13 +14,24 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
+func ReadTextData(filepath string, epsg int) ([]tools.Point, string, tools.Info, tools.Info, error) {
 	file, err := os.Open(filepath)
 
 	if err != nil {
-		bunyan.Fatal(err)
+		return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
 	}
 	defer file.Close()
+
+	srs := gdal.CreateSpatialReference("")
+	err = srs.FromEPSG(epsg)
+	if err != nil {
+		return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
+	}
+
+	proj, err := srs.ToWKT()
+	if err != nil {
+		return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
+	}
 
 	var data []tools.Point
 	xInfo, yInfo := tools.MakeInfo(), tools.MakeInfo()
@@ -35,11 +46,11 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 			fields := strings.Fields(sc.Text())
 			xInfo.Step, err = strconv.ParseFloat(strings.TrimSpace(fields[0]), 64)
 			if err != nil {
-				bunyan.Fatal(err)
+				return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
 			}
 			yInfo.Step, err = strconv.ParseFloat(strings.TrimSpace(fields[1]), 64)
 			if err != nil {
-				bunyan.Fatal(err)
+				return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
 			}
 
 		case "ESTIMATE":
@@ -48,7 +59,7 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 				for minMax, val := range strings.Fields(sc.Text()) {
 					val, innerErr := strconv.ParseFloat(val, 64)
 					if innerErr != nil {
-						return []tools.Point{}, tools.Info{}, tools.Info{}, innerErr
+						return []tools.Point{}, "", tools.Info{}, tools.Info{}, innerErr
 					}
 
 					switch tools.MakePair(xy, minMax) {
@@ -66,7 +77,7 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 					}
 				}
 			}
-			return data, xInfo, yInfo, nil
+			return data, proj, xInfo, yInfo, nil
 
 		}
 
@@ -75,7 +86,7 @@ func ReadData(filepath string) ([]tools.Point, tools.Info, tools.Info, error) {
 	bunyan.Debug("xInfo", xInfo)
 	bunyan.Debug("yInfo", yInfo)
 	bunyan.Debug(data)
-	return data, xInfo, yInfo, errors.New("ESTIMATE not in file")
+	return data, "", xInfo, yInfo, fmt.Errorf("ESTIMATE not in file")
 }
 
 func addPoints(sc *bufio.Scanner) []tools.Point {
@@ -102,7 +113,7 @@ func addPoints(sc *bufio.Scanner) []tools.Point {
 func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tools.Point, tools.Info, tools.Info, error) {
 	rows, err := db.Query(query)
 	if err != nil {
-		bunyan.Fatal(err)
+		return []tools.Point{}, tools.Info{}, tools.Info{}, err
 	}
 
 	var listPoints []tools.Point
@@ -116,7 +127,7 @@ func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tool
 
 		err = rows.Scan(&elev, &x, &y)
 		if err != nil {
-			bunyan.Fatal(err)
+			return []tools.Point{}, tools.Info{}, tools.Info{}, err
 		}
 
 		xInfo.Min = math.Min(xInfo.Min, x)
@@ -135,8 +146,11 @@ func ReadPGData(db *sqlx.DB, query string, stepX float64, stepY float64) ([]tool
 	return listPoints, xInfo, yInfo, nil
 }
 
-func ReadGeoPackage(filename string, layer string, field string, stepX float64, stepY float64) ([]tools.Point, gdal.SpatialReference, tools.Info, tools.Info) {
-	listPoints, srs := getGPKGPoints(filename, layer, field)
+func ReadGeoPackage(filename string, layer string, field string, stepX float64, stepY float64) ([]tools.Point, string, tools.Info, tools.Info, error) {
+	listPoints, proj, err := getGPKGPoints(filename, layer, field)
+	if err != nil {
+		return []tools.Point{}, "", tools.Info{}, tools.Info{}, err
+	}
 
 	xInfo, yInfo := tools.MakeInfo(), tools.MakeInfo()
 
@@ -154,6 +168,6 @@ func ReadGeoPackage(filename string, layer string, field string, stepX float64, 
 	bunyan.Debug("yInfo", yInfo)
 	bunyan.Debug(listPoints)
 
-	return listPoints, srs, xInfo, yInfo
+	return listPoints, proj, xInfo, yInfo, nil
 
 }

@@ -91,11 +91,10 @@ This program cleans islands (dry spots) and voids (wet spots) that do not meet t
     - "T" is for tolerance island threshold
     - "A" is for adjacency type
 - tools/processing
-    - subtest name: "{ data | srs | xInfo | yInfo }"
+    - subtest name: "{ data | proj | xInfo | yInfo }"
     - tests geopackage reader
 
 **Notes** <br>
-
 - outputs ascii files to compare against correct outputs
 
 # Logging
