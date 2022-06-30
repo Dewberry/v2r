@@ -16,7 +16,10 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "v2r",
 	Short: "Vector to Raster interpolation routines",
-	Long:  `Vector to Raster interpolation routines with an accompanying testing suite.`,
+	Long: `v2r is a library that implements Vector to Raster interpolation routines. 
+Currently capabilities include:
+	- IDW (Inverse Distance Weighting)
+	- Cleaner (used to clean wet/dry spots from maps)`,
 }
 
 func Execute() {
