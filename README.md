@@ -24,7 +24,7 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 **Flags**<br>
 | Shorthand | Full Name     | Type   | Default                          | Description |
 | --------- | ------------- | ------ | -------------------------------- | ----------- |
-|           | --ascii       | bool   | _false_                          | Perform an additional write to an ascii file |
+|           | --ascii       | bool   | _false_                          | Perform an additional write to an ascii file? |
 | -c        | --concurrent  | bool   | _false_                          | Run concurrently? |
 |           | --cx          | int    | _200_                            | Set chunk size in x-direction  |
 |           | --cy          | int    | _200_                            | Set chunk size in y-direction  |
@@ -32,10 +32,10 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 |           | --ei          | float  | _1.5_                            | Exponential increment for calculations between start and end  |
 |           | --epsg        | int    | _2284_                           | Set EPSG |
 |           | --es          | float  | _0.5_                            | Start for exponent (inclusive)  |
-|           | --excel       | bool   | _false_                          | Perform an additional write to excel spreadsheet |
+|           | --excel       | bool   | _false_                          | Perform an additional write to excel spreadsheet? |
 |           | --field       | string |                                  | Set name of field in geopackage file  |
 | -f        | --file        | string | _required_                       | File to run |
-| -g        | --gpkg        | bool   | _false_                          | Read from gpkg (true) or txt file (false)  |
+| -g        | --gpkg        | bool   | _false_                          | Read from gpkg (true) or txt file (false)?  |
 |           | --layer       | string |                                  | Set name of layer in geopackage file  |
 |           | --outPath     | string | _data/idw_                       | Set outfile directory  |
 |           | --sx          | float  | _100.0_                          | Set step size in x-direction |
@@ -63,12 +63,12 @@ This program cleans islands (dry spots) and voids (wet spots) that do not meet t
 | Shorthand | Full Name     | Type   | Default      | Description |
 | --------- | ------------- | ------ | --------     | ----------- |
 | -a        | --adjacent    | int    | _8_          | Set adjacency type to include ordinal directions  [4 \| 8] |
-| -c        | --concurrent  | bool   | _false_       | Run concurrently? |
+| -c        | --concurrent  | bool   | _false_      | Run concurrently? |
 |           | --cx          | int    | _2560_       | Set chunk size in x-direction  |
 |           | --cy          | int    | _2560_       | Set chunk size in y-direction  |
 | -f        | --file        | string | _required_   | File to run |
 |           | --ti          | float  | _40,000.0_   | Set tolerance level for islands (sq. footage)|
-|           | --tv          | float  | _22,500.0_    | Set tolerance level for voids (sq. footage)|
+|           | --tv          | float  | _22,500.0_   | Set tolerance level for voids (sq. footage)|
 
 **Notes**
 - monitor memory usage (process can use up to 80% of free memory)
@@ -87,7 +87,7 @@ This program cleans islands (dry spots) and voids (wet spots) that do not meet t
 - features/idw
     - subtest name: "{ Serial | Conc }_step{ 1-1 | 2-2 }"
 - features/cleaner
-    - subtest name: "{ Serial | Conc }_T{ 4 | 9 }_A{ 4 | 8}"
+    - subtest name: "{ Serial | Conc }_T{ 4 | 9 }_A{ 4 | 8 }"
     - "T" is for tolerance island threshold
     - "A" is for adjacency type
 - tools/processing
