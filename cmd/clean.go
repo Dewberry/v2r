@@ -37,32 +37,31 @@ var cleanCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(cleanCmd)
 
-	cleanCmd.Flags().StringVarP(&filepath, "file", "f", "", "File to run (required)")
+	cleanCmd.Flags().StringVarP(&filepath, "file", "f", "", "file to run (required)")
 
-	cleanCmd.Flags().BoolVarP(&useChunk, "concurrent", "c", false, "Run concurrently or serially")
-	cleanCmd.Flags().IntVarP(&adjType, "adjacent", "a", 8, "Set adjacency type [4: only cardinal directions | 8: include ordinal]")
+	cleanCmd.Flags().BoolVarP(&useChunk, "concurrent", "c", false, "run concurrently or serially")
+	cleanCmd.Flags().IntVarP(&adjType, "adjacent", "a", 8, "set adjacency type [4: only cardinal directions | 8: include ordinal]")
 
-	cleanCmd.Flags().Float64Var(&toleranceIsland, "ti", 40000.0, "Tolerance for islands")
-	cleanCmd.Flags().Float64Var(&toleranceVoid, "tv", 22500.0, "Tolerance for voids")
-	cleanCmd.Flags().IntVar(&cleanChunkX, "cx", 256*10, "Chunk size in x-direction")
-	cleanCmd.Flags().IntVar(&cleanChunkY, "cy", 256*10, "Chunk size in y-direction")
+	cleanCmd.Flags().Float64Var(&toleranceIsland, "ti", 40000.0, "set tolerance for islands")
+	cleanCmd.Flags().Float64Var(&toleranceVoid, "tv", 22500.0, "set tolerance for voids")
+	cleanCmd.Flags().IntVar(&cleanChunkX, "cx", 256*10, "set chunk size in x-direction")
+	cleanCmd.Flags().IntVar(&cleanChunkY, "cy", 256*10, "set chunk size in y-direction")
 
 }
 
 func printFlagsCleaner() {
-	bunyan.Debug("Flags")
-	bunyan.Debug("-----")
+	bunyan.Info("-----Flags-----")
 
-	bunyan.Debugf("Filepath: %v", filepath)
-	bunyan.Debugf("Concurrent: %v", useChunk)
+	bunyan.Infof("Filepath: %v", filepath)
+	bunyan.Infof("Concurrent: %v", useChunk)
 	if useChunk {
-		bunyan.Debugf("Partition (x-direction): %v", cleanChunkX)
-		bunyan.Debugf("Partition (y-direction): %v", cleanChunkY)
+		bunyan.Infof("Partition (x-direction): %v", cleanChunkX)
+		bunyan.Infof("Partition (y-direction): %v", cleanChunkY)
 	}
-	bunyan.Debugf("Adjacency Type: d%v", adjType)
-	bunyan.Debugf("Tolerance (Island): %.1f", toleranceIsland)
-	bunyan.Debugf("Tolerance (Void): %.1f", toleranceVoid)
-	bunyan.Debug("-----")
+	bunyan.Infof("Adjacency Type: d%v", adjType)
+	bunyan.Infof("Tolerance (Islands): %.1f", toleranceIsland)
+	bunyan.Infof("Tolerance (Voids): %.1f", toleranceVoid)
+	bunyan.Info("---------------")
 }
 
 func clean() {

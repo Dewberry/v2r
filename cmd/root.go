@@ -31,9 +31,9 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initLogging)
-	rootCmd.PersistentFlags().BoolVarP(&useLumberjack, "log", "l", false, "Log outputs")
-	rootCmd.PersistentFlags().BoolVarP(&lvlDebug, "debug", "d", false, "Set logging level to DEBUG")
-	rootCmd.PersistentFlags().BoolVarP(&lvlError, "error", "e", false, "Set logging level to ERROR")
+	rootCmd.PersistentFlags().BoolVarP(&useLumberjack, "log", "l", false, "set logging level")
+	rootCmd.PersistentFlags().BoolVarP(&lvlDebug, "debug", "d", false, "set logging level to DEBUG")
+	rootCmd.PersistentFlags().BoolVarP(&lvlError, "error", "e", false, "set logging level to ERROR")
 }
 
 func initLogging() {

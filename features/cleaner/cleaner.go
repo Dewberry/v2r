@@ -113,7 +113,7 @@ func getSimilarSurrounding(areaMap *[][]square, loc tools.OrderedPair, adjType i
 
 func CleanFull(filepath string, outfile string, toleranceIsland float64, toleranceVoid float64, adjType int) error {
 	areaMap, gdal, err := readFile(filepath)
-	bunyan.Infof("[%v, %v]", len(areaMap), len(areaMap[0]))
+	bunyan.Debugf("[%v, %v]", len(areaMap), len(areaMap[0]))
 
 	if err != nil {
 		return err
