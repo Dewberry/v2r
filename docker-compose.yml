@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  sandbox:
+    container_name: v2r
+    build:
+      context: .
+      target: dev
+      # target: prod
+    networks:
+      - v2r-net
+    volumes:
+      - ./:/app
+    entrypoint: /root/go/bin/CompileDaemon --build="go build -o ./v2r main.go" --command="./v2r"
+
+networks:
+  v2r-net:
+    driver: bridge
