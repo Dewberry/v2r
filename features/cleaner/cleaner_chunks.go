@@ -1,12 +1,11 @@
 package cleaner
 
 import (
+	"math"
+	"time"
+
 	"github.com/dewberry/v2r/tools"
 	"github.com/dewberry/v2r/tools/processing"
-
-	"math"
-
-	"time"
 
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
