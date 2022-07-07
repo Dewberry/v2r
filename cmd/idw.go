@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dewberry/v2r/features/idw"
@@ -46,7 +47,7 @@ var idwCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(idwCmd)
 
-	cobra.OnInitialize(reqFlagsIDW)
+	cobra.OnInitialize(reqFlagsIDW, expRange)
 
 	idwCmd.Flags().BoolVarP(&fromGPKG, "gpkg", "g", false, "read from gpkg (true) or from txt file (false)")
 	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", false, "run program concurrently (true) or serially (false)")
@@ -59,7 +60,7 @@ func init() {
 
 	idwCmd.Flags().Float64Var(&expIncrement, "ei", .5, "set exponential incremement for calculations between start and end")
 	idwCmd.Flags().Float64Var(&expStart, "es", 1.5, "set start for exponent (inclusive)")
-	idwCmd.Flags().Float64Var(&expEnd, "ee", 1.5, "set end for exponent (inclusive)")
+	idwCmd.Flags().Float64Var(&expEnd, "ee", 0.0, "set end for exponent (exclusive)")
 	idwCmd.Flags().Float64Var(&stepX, "sx", 100.0, "set step size in x-direction")
 	idwCmd.Flags().Float64Var(&stepY, "sy", 100.0, "set step size in y-direction")
 
@@ -76,6 +77,20 @@ func reqFlagsIDW() {
 		idwCmd.MarkFlagRequired("layer")
 		idwCmd.MarkFlagRequired("field")
 	}
+}
+
+func expRange() {
+	bunyan.Info("exp")
+	if !idwCmd.Flag("ee").Changed { // default usage
+		expEnd = expStart + expIncrement
+	}
+	if expIncrement <= 0 {
+		bunyan.Fatalf("exponential increment (%v) must be > 0", expIncrement)
+	}
+	if expEnd <= expStart {
+		bunyan.Fatalf("exponent range: [%v, %v) has no iterations", expStart, expEnd)
+	}
+
 }
 
 func printFlagsIDW() {
@@ -100,7 +115,8 @@ func printFlagsIDW() {
 	}
 	bunyan.Infof("Step size in x-direction: %v", stepX)
 	bunyan.Infof("Step size in y-direction: %v", stepY)
-	bunyan.Infof("Exponent: [%v, %v]   Step size: %v", expStart, expEnd, expIncrement)
+
+	bunyan.Infof("Exponent: [%v, %v)   Step size: %v", expStart, expEnd, expIncrement)
 	bunyan.Info("---------------")
 
 }
@@ -135,11 +151,15 @@ func doIDW() {
 	if useChunking {
 		chunkString = "chunked"
 	}
-	outfile := fmt.Sprintf("%sstep%.0f-%.0f%s", outfileFolder, stepX, stepY, chunkString) // "step{x}-{y}[chunked]exp{exp}.[ext]"
-	iterations := 1 + int((expEnd-expStart)/expIncrement)
+
+	outfilePrefix := infile[tools.Max(strings.LastIndex(infile, "/")+1, strings.LastIndex(infile, "\\")+1):strings.LastIndex(infile, ".")]
+	outfile := fmt.Sprintf("%s%s_step%.0f-%.0f%s", outfileFolder, outfilePrefix, stepX, stepY, chunkString) // "{prefix}_step{x}-{y}[chunked]exp{exp}.[ext]"
+	iterations := 0
 	channel := make(chan string, iterations)
 
-	for exp := expStart; exp <= expEnd; exp += expIncrement {
+	for exp := expStart; exp < expEnd; exp += expIncrement {
+		iterations++
+		bunyan.Infof("pow%v", exp)
 		if !useChunking {
 			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, outAscii, outExcel, channel)
 		} else {
@@ -147,9 +167,9 @@ func doIDW() {
 		}
 	}
 
-	for exp := expStart; exp <= expEnd; exp += expIncrement {
+	for exp := expStart; exp < expEnd; exp += expIncrement {
 		receivedString := <-channel
-		bunyan.Infof(receivedString)
+		bunyan.Debug(receivedString)
 	}
 
 	bunyan.Infof("Completed %v iterations in %v", iterations, time.Since(start))
