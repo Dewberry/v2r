@@ -13,8 +13,7 @@ import (
 )
 
 func TestCleaner(t *testing.T) {
-	bunyan.Info("____________________________")
-	bunyan.Info("Cleaner")
+	bunyan.Info("__________Cleaner__________")
 
 	for _, cs := range [2]string{"Serial", "Conc"} {
 		for _, toleranceIsland := range [2]float64{4.0, 9.0} {
@@ -28,7 +27,7 @@ func TestCleaner(t *testing.T) {
 		}
 	}
 
-	bunyan.Info("____________________________")
+	bunyan.Info("___________________________")
 }
 
 func cleanerTestHelper(toleranceIsland float64, adjType int, chunk bool) bool {
@@ -45,14 +44,14 @@ func cleanerTestHelper(toleranceIsland float64, adjType int, chunk bool) bool {
 		outfile += "chunked"
 		err := CleanWithChunking(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
 		if err != nil {
-			bunyan.Error("CleanWithChunking() error")
+			bunyan.Error("CleanWithChunking() error", err)
 			return false
 		}
 	} else {
 		chunkString = "NO "
 		err := CleanFull(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
 		if err != nil {
-			bunyan.Error("CleanFull() error")
+			bunyan.Error("CleanFull() error", err)
 			return false
 		}
 	}

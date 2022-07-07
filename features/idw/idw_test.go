@@ -12,8 +12,7 @@ import (
 )
 
 func TestIDW(t *testing.T) {
-	bunyan.Info("____________________________")
-	bunyan.Info("IDW")
+	bunyan.Info("_____________IDW_____________")
 	epsg := 2284
 
 	filepath := "idw_test_files/idw_in.txt"
@@ -32,7 +31,7 @@ func TestIDW(t *testing.T) {
 			})
 		}
 	}
-	bunyan.Info("____________________________")
+	bunyan.Info("_____________________________")
 }
 
 func idwTestHelper(data *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yInfo tools.Info, proj string, chunk bool) bool {
