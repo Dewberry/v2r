@@ -15,23 +15,31 @@ The interpolation becomes more drastic as _p_ increases.
 $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\sum_{i=1}^{n} (\frac {1}{d_i^p})}$
 <br>
 
-**Read from Geopackage** <br>
-`./v2r idw -g -f [FILEPATH] --layer [LAYERNAME] --field [FIELDNAME]`
-
 **Read from txt file** <br>
 `./v2r idw -f [FILEPATH]`
+
+**Read from geopackage** <br>
+`./v2r idw -f [FILEPATH] -g --layer [LAYERNAME] --field [FIELDNAME]`
+
+
+**Default usage for one exponent** <br>
+`./v2r idw -f [FILEPATH] -g --layer [LAYERNAME] --field [FIELDNAME] --es [EXPONENT]`
+
+
+**Usage for range of exponents** <br>
+`./v2r idw -f [FILEPATH] -g --layer [LAYERNAME] --field [FIELDNAME] --es [START] --ee [END] --ei [INCREMENT]`
+
 
 **Flags**<br>
 | Shorthand | Full Name     | Type   | Default                          | Description |
 | --------- | ------------- | ------ | -------------------------------- | ----------- |
-|           | --ascii       | bool   | _false_                          | Perform an additional write to an ascii file? |
 | -c        | --concurrent  | bool   | _false_                          | Run concurrently? |
 |           | --cx          | int    | _200_                            | Set chunk size in x-direction  |
 |           | --cy          | int    | _200_                            | Set chunk size in y-direction  |
-|           | --ee          | float  | _1.5_                            | End for exponent (inclusive) |
-|           | --ei          | float  | _1.5_                            | Exponential increment for calculations between start and end  |
+|           | --ee          | float  |                                  | Set end for exponent (exclusive) |
+|           | --ei          | float  | _1.5_                            | Set exponential increment for calculations between start and end  |
 |           | --epsg        | int    | _2284_                           | Set EPSG |
-|           | --es          | float  | _0.5_                            | Start for exponent (inclusive)  |
+|           | --es          | float  | _0.5_                            | Set start for exponent (inclusive)  |
 |           | --excel       | bool   | _false_                          | Perform an additional write to excel spreadsheet? |
 |           | --field       | string |                                  | Set name of field in geopackage file  |
 | -f        | --file        | string | _required_                       | File to run |
@@ -47,7 +55,6 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 - invalid chunk sizes are converted to 1/4 of respective direction (~16 subprocesses)
 - epsg only used if --gpkg=false
 - field, layer required if --gpkg=true 
-- ascii, excel only used if --concurrent=false
 - not recommended to run ascii or excel prints for large datasets
 
 

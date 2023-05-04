@@ -40,18 +40,17 @@ func idwTestHelper(data *map[tools.OrderedPair]tools.Point, xInfo tools.Info, yI
 	pow := 1.7 // don't change
 
 	chunkString := "   "
-	outfile := fmt.Sprintf("idw_test_files/idw_step%.0f-%.0f", xInfo.Step, yInfo.Step) // "step{x}-{y}[chunked]pow{pow}.[ext]"
+	outfile := fmt.Sprintf("idw_test_files/idw_step%.0f-%.0fpow%.1f", xInfo.Step, yInfo.Step, pow) // "step{x}-{y}[chunked]pow{pow}.[ext]"
 	correctFP := fmt.Sprintf("idw_test_files/idw_correct_step%.0f-%.0f", xInfo.Step, yInfo.Step)
 
 	channel := make(chan string, 2)
 	if chunk {
 		outfile += "chunked"
-		ChunkSolve(data, outfile, xInfo, yInfo, chunkR, chunkC, proj, pow, channel)
+		ChunkSolve(data, outfile+".tiff", xInfo, yInfo, chunkR, chunkC, proj, pow, channel)
 	} else {
 		chunkString = "NO "
-		FullSolve(data, outfile, xInfo, yInfo, proj, pow, false, false, channel)
+		FullSolve(data, outfile+".tiff", xInfo, yInfo, proj, pow, channel)
 	}
-	outfile += "pow1.7"
 
 	bunyan.Info(<-channel)
 

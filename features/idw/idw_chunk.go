@@ -84,7 +84,7 @@ func ChunkSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo t
 		chunk := <-chunkChannel
 		received := time.Now()
 
-		err := writeTif(chunk, fmt.Sprintf("%spow%.1f", outfile, pow), gdal, totalSize, i)
+		err := writeGDAL(chunk, outfile, gdal, totalSize, i == 0)
 		if err != nil {
 			return err
 		}

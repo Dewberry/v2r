@@ -42,14 +42,14 @@ func cleanerTestHelper(toleranceIsland float64, adjType int, chunk bool) bool {
 
 	if chunk {
 		outfile += "chunked"
-		err := CleanWithChunking(filepath, outfile, toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
+		err := CleanWithChunking(filepath, outfile+".tiff", toleranceIsland, toleranceVoid, tools.MakePair(chunky, chunkx), adjType)
 		if err != nil {
 			bunyan.Error("CleanWithChunking() error", err)
 			return false
 		}
 	} else {
 		chunkString = "NO "
-		err := CleanFull(filepath, outfile, toleranceIsland, toleranceVoid, adjType)
+		err := CleanFull(filepath, outfile+".tiff", toleranceIsland, toleranceVoid, adjType)
 		if err != nil {
 			bunyan.Error("CleanFull() error", err)
 			return false
