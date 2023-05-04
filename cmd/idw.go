@@ -141,7 +141,7 @@ func doIDW() {
 
 	for exp := expStart; exp <= expEnd; exp += expIncrement {
 		if !useChunking {
-			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, outAscii, outExcel, channel)
+			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, channel)
 		} else {
 			go idw.ChunkSolve(&data, outfile, xInfo, yInfo, idwChunkY, idwChunkX, proj, exp, channel)
 		}

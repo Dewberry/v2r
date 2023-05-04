@@ -2,6 +2,7 @@ package idw
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dewberry/v2r/tools"
@@ -10,8 +11,18 @@ import (
 	bunyan "github.com/Dewberry/paul-bunyan"
 )
 
-func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, proj string, pow float64, ascii bool, excel bool, channel chan string) error {
+// Run IDW algorithm serially. Print to outfile
+func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo tools.Info, yInfo tools.Info, proj string, pow float64, channel chan string) error {
 	start := time.Now()
+
+	// outfile checking
+	ascii := strings.HasSuffix(outfile, ".asc")
+	excel := strings.HasSuffix(outfile, ".xlsx")
+	tiff := strings.HasSuffix(outfile, ".tiff") || strings.HasSuffix(outfile, ".tif")
+
+	if !(ascii || excel || tiff) {
+		return fmt.Errorf("outfile is not supported. Use one of these files: tiff (.tif/.tiff), ascii (.asc), or excel (.xlsx).")
+	}
 
 	numRows, numCols := tools.GetDimensions(xInfo, yInfo)
 	bunyan.Debugf("XINFO: %v     YINFO: %v", xInfo, yInfo)
@@ -27,22 +38,23 @@ func FullSolve(data *map[tools.OrderedPair]tools.Point, outfile string, xInfo to
 			grid[r][c] = calculateIDW(data, xInfo, yInfo, pow, r, c).Weight
 		}
 	}
-	toPrint := chunkIDW{tools.MakePair(0, 0), grid}
-	outfile = fmt.Sprintf("%spow%.1f", outfile, pow)
-	err := writeTif(toPrint, outfile, gdal, totalSize, 0)
-	if err != nil {
-		return err
-	}
-	if ascii {
-		bunyan.Debug("ascii write")
-		err := processing.TransferType(outfile+".tiff", outfile+".asc", "Int32") // for ascii output
-		if err != nil {
-			return err
-		}
-	}
+
 	if excel {
 		bunyan.Debug("excel write")
 		err := processing.PrintExcel(grid, outfile, pow)
+		if err != nil {
+			return err
+		}
+	} else { // ascii or tiff write
+		if ascii {
+			bunyan.Debug("ascii write")
+		} else if tiff {
+			bunyan.Debug("tiff write")
+		}
+
+		toPrint := chunkIDW{tools.MakePair(0, 0), grid}
+		err := writeGDAL(toPrint, outfile, gdal, totalSize, true)
+
 		if err != nil {
 			return err
 		}
