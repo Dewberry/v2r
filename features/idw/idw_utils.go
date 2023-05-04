@@ -1,9 +1,6 @@
 package idw
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/dewberry/v2r/tools"
 	"github.com/dewberry/v2r/tools/processing"
 )
@@ -44,25 +41,11 @@ func flattenGrid(grid [][]float64) []float64 {
 	return unwrappedMatrix
 }
 
-func writeTif(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) error {
+func writeGDAL(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, create bool) error {
 	grid := chunk.Data
 	start := chunk.Pair
 	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-	return processing.WriteTif(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, i == 0)
-}
-
-func writeAsc(chunk chunkIDW, filename string, gdal processing.GDalInfo, totalSize tools.OrderedPair, i int) error {
-	grid := chunk.Data
-	start := chunk.Pair
-	bufferSize := tools.MakePair(len(grid), len(grid[0]))
-
-	emptyFile, err := os.Create(fmt.Sprintf("%s.asc", filename))
-	if err != nil {
-		return err
-	}
-	emptyFile.Close()
-
-	return processing.WriteAscii(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, false)
+	return processing.WriteGDAL(flattenGrid(grid), gdal, filename, start, totalSize, bufferSize, create)
 }
 
 func getChannelSize(chunkSize int) int {
