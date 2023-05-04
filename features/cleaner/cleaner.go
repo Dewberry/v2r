@@ -124,6 +124,6 @@ func CleanFull(filepath string, outfile string, toleranceIsland float64, toleran
 	ICP := innerChunkPartition{0, len(areaMap), 0, len(areaMap[0])}
 	summary := cleanAreaMap(&areaMap, tolerance, areaSize, adjType, ICP)
 	printStats(summary, areaSize)
-	return processing.WriteTif(flattenAreaMap(areaMap), gdal, outfile, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), true)
+	return processing.WriteGDAL(flattenAreaMap(areaMap), gdal, outfile, tools.MakePair(0, 0), tools.MakePair(len(areaMap), len(areaMap[0])), tools.MakePair(len(areaMap), len(areaMap[0])), true)
 
 }

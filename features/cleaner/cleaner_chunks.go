@@ -66,7 +66,7 @@ func bufferSize(adjType int, tolerance map[byte]int) tools.OrderedPair {
 	}
 }
 
-//Return start of chunk, size of chunk (both Ordered Pairs), valid
+// Return start of chunk, size of chunk (both Ordered Pairs), valid
 func makeChunk(buffer tools.OrderedPair, chunkSize tools.OrderedPair, rowsAndCols tools.OrderedPair, r int, c int) (innerChunkPartition, tools.OrderedPair) {
 	startBuffer := tools.MakePair(tools.Max(0, r-buffer.R), tools.Max(0, c-buffer.C))
 	endBuffer := tools.MakePair(tools.Min(rowsAndCols.R, r+chunkSize.R+buffer.R), tools.Min(rowsAndCols.C, c+chunkSize.C+buffer.C))
@@ -128,7 +128,8 @@ func CleanWithChunking(filepath string, outfile string, toleranceIsland float64,
 		bufferSize := tools.MakePair(len(completedChunk.AreaMap), len(completedChunk.AreaMap[0]))
 		cStats.updateStats(completedChunk.cStats)
 
-		err = processing.WriteTif(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, j == 0)
+		err = processing.WriteGDAL(flattenAreaMap(completedChunk.AreaMap), gdal, outfile, completedChunk.Offset, rowsAndCols, bufferSize, j == 0)
+
 		if err != nil {
 			return err
 		}

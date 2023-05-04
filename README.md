@@ -33,7 +33,6 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 **Flags**<br>
 | Shorthand | Full Name     | Type   | Default                          | Description |
 | --------- | ------------- | ------ | -------------------------------- | ----------- |
-|           | --ascii       | bool   | _false_                          | Perform an additional write to an ascii file? |
 | -c        | --concurrent  | bool   | _false_                          | Run concurrently? |
 |           | --cx          | int    | _200_                            | Set chunk size in x-direction  |
 |           | --cy          | int    | _200_                            | Set chunk size in y-direction  |
@@ -56,7 +55,6 @@ $z_p= \frac{\displaystyle\sum_{i=1}^{n} (\frac {z_i}{d_i^p}) } {\displaystyle\su
 - invalid chunk sizes are converted to 1/4 of respective direction (~16 subprocesses)
 - epsg only used if --gpkg=false
 - field, layer required if --gpkg=true 
-- ascii, excel only used if --concurrent=false
 - not recommended to run ascii or excel prints for large datasets
 
 

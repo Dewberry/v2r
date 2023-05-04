@@ -23,21 +23,30 @@ func CreateGDalInfo(XMin float64, YMin float64, XCell float64, YCell float64, GD
 	return GDalInfo{XMin, YMin, XCell, YCell, GDalDataType, proj}
 }
 
-func WriteTif(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
-	filename = fmt.Sprintf("%s.tiff", filename)
-	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "GTiff", offsets, totalSize, bufferSize, create)
-}
-
-func WriteAscii(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
-	filename = fmt.Sprintf("%s.asc", filename)
-	return WriteGDAL(unwrappedMatrix, GDINFO, filename, "ASCIIGRID", offsets, totalSize, bufferSize, create)
-}
-
-func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, driver string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
+// Write out cleaned data using gdal. Currently only supports ascii and tiff types.
+func WriteGDAL(unwrappedMatrix interface{}, GDINFO GDalInfo, filename string, offsets tools.OrderedPair, totalSize tools.OrderedPair, bufferSize tools.OrderedPair, create bool) error {
 	var dataset gdal.Dataset
 	if create {
 		bunyan.Debug("Creating Raster")
-		driver, err := gdal.GetDriverByName(driver)
+
+		ext_driver := map[string]string{
+			".tif":  "GTiff",
+			".tiff": "GTiff",
+			".asc":  "ASCIIGRID",
+		}
+		driverShortName := ""
+
+		for ext, _ := range ext_driver {
+			if strings.HasSuffix(filename, ext) {
+				driverShortName = ext_driver[ext]
+			}
+		}
+
+		if driverShortName == "" {
+			return fmt.Errorf("Not a valid output file extension. Only accepts tif and ascii files (.tif/.tiff and .asc).")
+		}
+
+		driver, err := gdal.GetDriverByName(driverShortName)
 		if err != nil {
 			return err
 		}

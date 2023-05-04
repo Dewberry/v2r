@@ -71,7 +71,10 @@ func clean() {
 	if useChunk {
 		chunkString = "chunked"
 	}
-	outfile := fmt.Sprintf("%s_isl%.0fvoid%.0f_cleaned%v%v", strings.TrimSuffix(filepath, ".tif"), toleranceIsland, toleranceVoid, adjType, chunkString)
+
+	trimmed_input := strings.Split(filepath, ".")[0]
+	outfile := fmt.Sprintf("%s_isl%.0fvoid%.0f_cleaned%v%v.tiff", trimmed_input, toleranceIsland, toleranceVoid, adjType, chunkString)
+	bunyan.Debug(outfile)
 
 	err := error(nil)
 	if useChunk {

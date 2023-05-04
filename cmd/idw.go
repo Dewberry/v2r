@@ -16,8 +16,6 @@ import (
 var (
 	fromGPKG      bool
 	useChunking   bool
-	outExcel      bool
-	outAscii      bool
 	idwChunkX     int
 	idwChunkY     int
 	expIncrement  float64
@@ -51,8 +49,6 @@ func init() {
 
 	idwCmd.Flags().BoolVarP(&fromGPKG, "gpkg", "g", false, "read from gpkg (true) or from txt file (false)")
 	idwCmd.Flags().BoolVarP(&useChunking, "concurrent", "c", false, "run program concurrently (true) or serially (false)")
-	idwCmd.Flags().BoolVar(&outAscii, "ascii", false, "write to ascii file?")
-	idwCmd.Flags().BoolVar(&outExcel, "excel", false, "write to excel spreadsheet?")
 
 	idwCmd.Flags().IntVar(&idwChunkX, "cx", 200, "set chunk size in x-direction")
 	idwCmd.Flags().IntVar(&idwChunkY, "cy", 200, "set chunk size in y-direction")
@@ -102,9 +98,6 @@ func printFlagsIDW() {
 	if useChunk {
 		bunyan.Infof("Partition (x-direction): %v", idwChunkX)
 		bunyan.Infof("Partition (y-direction): %v", idwChunkY)
-	} else {
-		bunyan.Infof("Print to ascii: %v", outAscii)
-		bunyan.Infof("Print to excel: %v", outExcel)
 	}
 	bunyan.Infof("From GPKG: %v", fromGPKG)
 	if fromGPKG {
@@ -131,7 +124,6 @@ func doIDW() {
 		proj       string
 		err        error
 	)
-
 	if fromGPKG {
 		listPoints, proj, xInfo, yInfo, err = processing.ReadGeoPackage(infile, layer, field, stepX, stepY)
 		if err != nil {
@@ -157,13 +149,14 @@ func doIDW() {
 	iterations := 0
 	channel := make(chan string, iterations)
 
+	bunyan.Debug(outfile)
 	for exp := expStart; exp < expEnd; exp += expIncrement {
 		iterations++
-		bunyan.Infof("pow%v", exp)
+		outfile_formatted := fmt.Sprintf("%spow%.1f.tiff", outfile, exp)
 		if !useChunking {
-			go idw.FullSolve(&data, outfile, xInfo, yInfo, proj, exp, outAscii, outExcel, channel)
+			go idw.FullSolve(&data, outfile_formatted, xInfo, yInfo, proj, exp, channel)
 		} else {
-			go idw.ChunkSolve(&data, outfile, xInfo, yInfo, idwChunkY, idwChunkX, proj, exp, channel)
+			go idw.ChunkSolve(&data, outfile_formatted, xInfo, yInfo, idwChunkY, idwChunkX, proj, exp, channel)
 		}
 	}
 
