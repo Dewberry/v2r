@@ -17,9 +17,8 @@ func GetExcelColumn(i int) (string, error) {
 
 }
 
-//Can not be used concurrently
-func PrintExcel(grid [][]float64, filepath string, pow float64) error {
-	filename := fmt.Sprintf("%s.xlsx", filepath)
+// Print out grid to excel file. Can only be done serially.
+func PrintExcel(grid [][]float64, filename string, pow float64) error {
 	sheetname := fmt.Sprintf("pow%v", pow)
 
 	file, err := excelize.OpenFile(filename)
