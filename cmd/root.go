@@ -42,6 +42,7 @@ func initLogging() {
 	}
 	if lvlDebug {
 		bunyan.New().SetLevel(bunyan.DEBUG)
+		bunyan.Debug("running in debug mode")
 	} else if lvlError {
 		bunyan.New().SetLevel(bunyan.ERROR)
 	}
